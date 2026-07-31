@@ -65,6 +65,7 @@ export default function Configuracion() {
   };
 
   const handleChangePassword = async () => {
+    if (!passwordForm.current_password || !passwordForm.new_password) {
       toast.error('Complete todos los campos');
       return;
     }
