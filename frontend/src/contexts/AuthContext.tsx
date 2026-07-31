@@ -68,9 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { loadUser(); }, [loadUser]);
 
   const login = async (email: string, password: string) => {
-    const firebaseToken = await firebaseLogin(email, password);
-    const data = await api.post<LoginResponse>('/auth/firebase', { firebaseToken, email });
-    saveSession(data.token, data.user, data.tenant);
+    try {
+      const firebaseToken = await firebaseLogin(email, password);
+      const data = await api.post<LoginResponse>('/auth/firebase', { firebaseToken, email });
+      saveSession(data.token, data.user, data.tenant);
+    } catch (fbError: any) {
+      // Fallback: login clásico si Firebase falla (cuentas creadas antes de Firebase)
+      const data = await api.post<LoginResponse>('/auth/login', { email, password });
+      saveSession(data.token, data.user, data.tenant);
+    }
   };
 
   const loginWithGoogle = async () => {
