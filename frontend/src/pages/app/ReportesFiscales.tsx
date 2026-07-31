@@ -284,4 +284,4 @@ const sel: React.CSSProperties = { padding: '8px 14px', borderRadius: 10, border
 const tabBtn: React.CSSProperties = { padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.2s' };
 const actionBtn: React.CSSProperties = { padding: '8px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, color: '#475569' };
 const spinner: React.CSSProperties = { width: 36, height: 36, border: '3px solid #e2e8f0', borderTopColor: '#0A2472', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' };
-`;
+
