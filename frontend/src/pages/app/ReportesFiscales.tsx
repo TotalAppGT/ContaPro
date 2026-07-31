@@ -1,261 +1,211 @@
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet, FileText, Download, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { Card, CardHeader } from '@/components/ui/Card';
-import { Select } from '@/components/ui/Select';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
-import type { SAT2237Report, IVACruceReport } from '@/types';
 
 const months = [
-  { value: '1', label: 'Enero' }, { value: '2', label: 'Febrero' }, { value: '3', label: 'Marzo' },
-  { value: '4', label: 'Abril' }, { value: '5', label: 'Mayo' }, { value: '6', label: 'Junio' },
-  { value: '7', label: 'Julio' }, { value: '8', label: 'Agosto' }, { value: '9', label: 'Septiembre' },
-  { value: '10', label: 'Octubre' }, { value: '11', label: 'Noviembre' }, { value: '12', label: 'Diciembre' },
+  { v: '1', l: 'Enero' }, { v: '2', l: 'Febrero' }, { v: '3', l: 'Marzo' },
+  { v: '4', l: 'Abril' }, { v: '5', l: 'Mayo' }, { v: '6', l: 'Junio' },
+  { v: '7', l: 'Julio' }, { v: '8', l: 'Agosto' }, { v: '9', l: 'Septiembre' },
+  { v: '10', l: 'Octubre' }, { v: '11', l: 'Noviembre' }, { v: '12', l: 'Diciembre' },
 ];
 
-const years = Array.from({ length: 5 }, (_, i) => ({
-  value: String(new Date().getFullYear() - i),
-  label: String(new Date().getFullYear() - i),
-}));
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 5 }, (_, i) => ({ v: String(currentYear - i), l: String(currentYear - i) }));
 
 export default function ReportesFiscales() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'sat2237' | 'cruce' | 'integracion'>('sat2237');
+  const [tab, setTab] = useState('sat2237');
   const [month, setMonth] = useState(String(new Date().getMonth() + 1));
-  const [year, setYear] = useState(String(new Date().getFullYear()));
-  const [isLoading, setIsLoading] = useState(false);
-  const [satReport, setSatReport] = useState<SAT2237Report | null>(null);
-  const [cruceData, setCruceData] = useState<IVACruceReport[]>([]);
+  const [year, setYear] = useState(String(currentYear));
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    loadReport();
-  }, [activeTab, month, year]);
+    fetchData();
+  }, [tab, month, year]);
 
-  const loadReport = async () => {
-    setIsLoading(true);
+  const fetchData = async () => {
+    setLoading(true);
+    setError('');
     try {
-      if (activeTab === 'sat2237') {
-        const data = await api.get<any>('/sat/sat2237', { mes: month, anio: year });
-        const r = data.reporte || data;
-        setSatReport({
-          nit: r.nit || user?.tenant_name || '',
-          company_name: r.company_name || r.empresa || user?.tenant_name || '',
-          period: r.period || r.periodo || `${year}-${month.padStart(2, '0')}`,
-          regime: r.regime || r.regimen || 'general',
-          total_income: Number(r.total_income || r.ingresos_total || 0),
-          total_expenses: Number(r.total_expenses || r.egresos_total || 0),
-          taxable_profit: Number(r.taxable_profit || r.renta_imponible || 0),
-          isr_determined: Number(r.isr_determined || r.isr || 0),
-          iva_credits: Number(r.iva_credits || r.iva_credito || 0),
-          iva_debits: Number(r.iva_debits || r.iva_debito || 0),
-        });
-      } else if (activeTab === 'cruce') {
-        const data = await api.get<any>('/sat/resumen-cruce', { mes: month, anio: year });
-        const list = Array.isArray(data) ? data : (data.cruce || data.data || []);
-        setCruceData(list);
+      if (tab === 'sat2237') {
+        const r = await api.get<any>('/sat/sat2237', { mes: month, anio: year });
+        setData(r);
+      } else if (tab === 'cruce') {
+        const r = await api.get<any>('/sat/resumen-cruce', { mes: month, anio: year });
+        setData(r);
+      } else {
+        const r = await api.get<any>('/contabilidad/reporte-financiero', { mes: month, anio: year });
+        setData(r);
       }
-    } catch {
-      if (activeTab === 'sat2237') {
-        setSatReport({
-          nit: user?.tenant_name || '1234567-8', company_name: user?.tenant_name || 'Mi Empresa',
-          period: `${year}-${month.padStart(2, '0')}`, regime: 'general',
-          total_income: 125000, total_expenses: 78000,
-          taxable_profit: 47000, isr_determined: 11750,
-          iva_credits: 15000, iva_debits: 9360,
-        });
-      }
-      if (activeTab === 'cruce') {
-        setCruceData([
-          { period: `${year}-${month.padStart(2, '0')}`, sales_iva: 15000, purchases_iva: 9360, difference: 5640, variation: 2.3 },
-        ]);
-      }
-    } finally {
-      setIsLoading(false);
+    } catch (e: any) {
+      setError('No se pudieron cargar los datos para este período.');
+      setData(null);
     }
+    setLoading(false);
   };
 
-  const tabs = [
-    { key: 'sat2237' as const, label: 'SAT-2237' },
-    { key: 'cruce' as const, label: 'Resumen Cruzado' },
-    { key: 'integracion' as const, label: 'Integración de Saldos' },
-  ];
-
-  if (isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary-600" /></div>;
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-900">Reportes Fiscales</h2>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => toast.success('Descargando Excel...')}>
-            <FileSpreadsheet className="w-4 h-4" /> Excel
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <FileText className="w-4 h-4" /> PDF
-          </Button>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111' }}>Reportes Fiscales</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <select value={month} onChange={e => setMonth(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd' }}>
+            {months.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
+          </select>
+          <select value={year} onChange={e => setYear(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd' }}>
+            {years.map(y => <option key={y.v} value={y.v}>{y.l}</option>)}
+          </select>
         </div>
       </div>
 
-      {/* Tabs */}
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-primary-700 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+        {[
+          { key: 'sat2237', label: 'SAT-2237' },
+          { key: 'cruce', label: 'Resumen Cruzado' },
+          { key: 'integracion', label: 'Integración de Saldos' },
+        ].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
+              backgroundColor: tab === t.key ? '#0A2472' : '#f3f4f6',
+              color: tab === t.key ? '#fff' : '#666',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid #0A2472', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
+          <p style={{ marginTop: '12px', color: '#666' }}>Cargando reportes...</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '40px', textAlign: 'center' }}>
+          <p style={{ color: '#666' }}>{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && data && tab === 'sat2237' && (
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Formulario SAT-2237 — IVA Mensual</h3>
+          <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px', marginBottom: '20px' }}>
+            <p><strong>Período:</strong> {months.find(m => m.v === month)?.l} {year}</p>
+            <p><strong>Régimen:</strong> {data.regimen || 'No especificado'}</p>
           </div>
-          <div className="flex gap-3">
-            <Select options={months} value={month} onChange={(e) => setMonth(e.target.value)} className="w-36" />
-            <Select options={years} value={year} onChange={(e) => setYear(e.target.value)} className="w-28" />
+          {data.ventas && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={th}>Concepto</th>
+                  <th style={thR}>Monto (Q)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style={td}>Total Ventas</td><td style={tdR}>Q {Number(data.ventas.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+                <tr><td style={td}>Base Imponible Ventas</td><td style={tdR}>Q {Number(data.ventas.base_imponible || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+                <tr><td style={td}>IVA Débito Fiscal</td><td style={tdR}>Q {Number(data.ventas.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+              </tbody>
+            </table>
+          )}
+          {data.compras && (
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={th}>Concepto</th>
+                  <th style={thR}>Monto (Q)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style={td}>Total Compras</td><td style={tdR}>Q {Number(data.compras.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+                <tr><td style={td}>Base Imponible Compras</td><td style={tdR}>Q {Number(data.compras.base_imponible || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+                <tr><td style={td}>IVA Crédito Fiscal</td><td style={tdR}>Q {Number(data.compras.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+              </tbody>
+            </table>
+          )}
+          {data.calculo && (
+            <div style={{ background: data.calculo.resultado === 'IMPUESTO A PAGAR' ? '#fef2f2' : '#f0fdf4', borderRadius: '8px', padding: '20px', border: '2px solid ' + (data.calculo.resultado === 'IMPUESTO A PAGAR' ? '#fecaca' : '#bbf7d0') }}>
+              <p style={{ fontSize: '18px', fontWeight: 'bold' }}>{data.calculo.resultado}: Q {Number(data.calculo.monto || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>Débito: Q {data.calculo.debito_fiscal} | Crédito: Q {data.calculo.credito_fiscal}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && data && tab === 'cruce' && (
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Resumen Cruzado IVA — {months.find(m => m.v === month)?.l} {year}</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
+              <h4 style={{ fontWeight: '600', marginBottom: '12px' }}>Ventas</h4>
+              <p>IVA Libro: Q {Number(data.cruce_ventas?.iva_libro || data.libroVentas?.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p>IVA Mayor: Q {Number(data.cruce_ventas?.iva_mayor || data.mayorContable?.debitoFiscal || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p style={{ fontWeight: 'bold', color: Math.abs(data.cruce_ventas?.variacion || 0) > 1 ? '#dc2626' : '#16a34a' }}>
+                Variación: Q {Number(data.cruce_ventas?.variacion || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
+              <h4 style={{ fontWeight: '600', marginBottom: '12px' }}>Compras</h4>
+              <p>IVA Libro: Q {Number(data.cruce_compras?.iva_libro || data.libroCompras?.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p>IVA Mayor: Q {Number(data.cruce_compras?.iva_mayor || data.mayorContable?.creditoFiscal || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p style={{ fontWeight: 'bold', color: Math.abs(data.cruce_compras?.variacion || 0) > 1 ? '#dc2626' : '#16a34a' }}>
+                Variación: Q {Number(data.cruce_compras?.variacion || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
           </div>
         </div>
-      </Card>
-
-      {/* SAT-2237 Tab */}
-      {activeTab === 'sat2237' && satReport && (
-        <Card>
-          <div className="border-b border-gray-200 pb-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Formulario SAT-2237</h3>
-                <p className="text-sm text-gray-500">Declaración Jurada del Impuesto Sobre la Renta</p>
-              </div>
-              <Badge variant="info">{satReport.regime === 'general' ? 'Régimen General' : 'Pequeño Contribuyente'}</Badge>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 text-sm">
-              <div><span className="text-gray-500">NIT:</span> <strong>{satReport.nit}</strong></div>
-              <div><span className="text-gray-500">Empresa:</span> <strong>{satReport.company_name}</strong></div>
-              <div><span className="text-gray-500">Período:</span> <strong>{satReport.period}</strong></div>
-              <div><span className="text-gray-500">Régimen:</span> <strong>{satReport.regime === 'general' ? 'General' : 'Pequeño'}</strong></div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-600">Total Ingresos Brutos</span>
-                <span className="font-semibold">Q{satReport.total_income.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-600">Total Egresos Deducibles</span>
-                <span className="font-semibold text-red-600">-Q{satReport.total_expenses.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b-2 border-gray-300">
-                <span className="text-sm font-semibold text-gray-900">Renta Imponible</span>
-                <span className="font-bold text-lg">Q{satReport.taxable_profit.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b-2 border-gray-300">
-                <span className="text-sm font-semibold text-gray-900">ISR Determinado</span>
-                <span className="font-bold text-lg text-primary-700">Q{satReport.isr_determined.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-600">IVA Crédito Fiscal</span>
-                <span className="font-semibold text-green-600">Q{satReport.iva_credits.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-gray-600">IVA Débito Fiscal</span>
-                <span className="font-semibold text-red-600">Q{satReport.iva_debits.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b-2 border-gray-300">
-                <span className="text-sm font-semibold text-gray-900">IVA a Pagar / Crédito</span>
-                <span className="font-bold text-lg">Q{(satReport.iva_credits - satReport.iva_debits).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
       )}
 
-      {/* Cruce Tab */}
-      {activeTab === 'cruce' && (
-        <Card>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Resumen Cruzado IVA Ventas vs Compras</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+      {!loading && !error && data && tab === 'integracion' && (
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Integración de Saldos — {months.find(m => m.v === month)?.l} {year}</h3>
+          {data.reporte ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="bg-gray-50 border-y border-gray-200">
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Período</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">IVA Ventas (Q)</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">IVA Compras (Q)</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">Diferencia (Q)</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">Variación</th>
+                <tr style={{ background: '#f9fafb' }}>
+                  <th style={th}>Código</th>
+                  <th style={th}>Cuenta</th>
+                  <th style={th}>Tipo</th>
+                  <th style={thR}>Debe</th>
+                  <th style={thR}>Haber</th>
+                  <th style={thR}>Saldo</th>
                 </tr>
               </thead>
               <tbody>
-                {cruceData.map((row) => (
-                  <tr key={row.period} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{row.period}</td>
-                    <td className="px-4 py-3 text-right">Q{row.sales_iva.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right">Q{row.purchases_iva.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right font-semibold">Q{row.difference.toFixed(2)}</td>
-                    <td className={`px-4 py-3 text-right ${row.variation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {row.variation >= 0 ? '+' : ''}{row.variation}%
-                    </td>
+                {data.reporte.filter((r: any) => r.saldo !== 0).map((r: any, i: number) => (
+                  <tr key={i}>
+                    <td style={td}>{r.codigo}</td>
+                    <td style={td}>{r.nombre}</td>
+                    <td style={td}>{r.tipo}</td>
+                    <td style={tdR}>Q {Number(r.debe || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
+                    <td style={tdR}>Q {Number(r.haber || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
+                    <td style={{ ...tdR, fontWeight: 'bold' }}>Q {Number(r.saldo || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </Card>
+          ) : (
+            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
+              <p>Ingresos: Q {Number(data.resumen?.ingresos_total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p>Gastos: Q {Number(data.resumen?.gastos_total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p style={{ fontWeight: 'bold', fontSize: '16px', color: (data.resumen?.utilidad || 0) >= 0 ? '#16a34a' : '#dc2626' }}>
+                Utilidad: Q {Number(data.resumen?.utilidad || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          )}
+        </div>
       )}
-
-      {/* Integracion Tab */}
-      {activeTab === 'integracion' && (
-        <Card>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Integración de Saldos</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-y border-gray-200">
-                  <th className="px-4 py-3 text-left font-semibold text-gray-600">Cuenta</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">Saldo Anterior</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">Débitos</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">Créditos</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-600">Saldo Actual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { code: '1.1.01', name: 'Caja', prev: 25000, debits: 45000, credits: 30000, current: 40000 },
-                  { code: '1.1.02', name: 'Bancos', prev: 150000, debits: 200000, credits: 180000, current: 170000 },
-                  { code: '1.2.01', name: 'Clientes', prev: 80000, debits: 120000, credits: 90000, current: 110000 },
-                  { code: '2.1.01', name: 'Proveedores', prev: 45000, debits: 60000, credits: 75000, current: 60000 },
-                  { code: '3.1.01', name: 'Capital', prev: 210000, debits: 0, credits: 0, current: 210000 },
-                  { code: '4.1.01', name: 'Ventas', prev: 0, debits: 0, credits: 350000, current: 350000 },
-                  { code: '5.1.01', name: 'Compras', prev: 0, debits: 220000, credits: 0, current: 220000 },
-                ].map((row) => (
-                  <tr key={row.code} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <span className="font-medium">{row.code}</span>
-                      <span className="text-gray-500 ml-2">{row.name}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right">Q{row.prev.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">Q{row.debits.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">Q{row.credits.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right font-semibold">Q{row.current.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
+
+const th: React.CSSProperties = { padding: '10px 12px', textAlign: 'left', fontWeight: '600', color: '#666', fontSize: '13px', borderBottom: '2px solid #e5e7eb' };
+const thR: React.CSSProperties = { ...th, textAlign: 'right' };
+const td: React.CSSProperties = { padding: '10px 12px', fontSize: '14px', borderBottom: '1px solid #f3f4f6' };
+const tdR: React.CSSProperties = { ...td, textAlign: 'right' };
