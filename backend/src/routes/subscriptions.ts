@@ -1,11 +1,8 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
-import { createRecurrenteCheckout, verifyRecurrenteWebhook } from '../services/recurrente';
 
 const router = Router();
-
-const BASE_URL = process.env.BASE_URL || 'https://contapro-production.up.railway.app';
 
 const PLANS = [
   {
@@ -14,6 +11,7 @@ const PLANS = [
     precio: 79,
     precio_anual: 790,
     moneda: 'GTQ',
+    recurrente_url: 'https://app.recurrente.com/s/total-app-gt/contapro-personal',
     features: ['1 empresa', 'Libros de IVA', 'Facturación básica', 'Reportes SAT'],
     limits: { users: 1, clients: 1 },
   },
@@ -23,6 +21,7 @@ const PLANS = [
     precio: 199,
     precio_anual: 1990,
     moneda: 'GTQ',
+    recurrente_url: 'https://app.recurrente.com/s/total-app-gt/contapro-profesional',
     features: ['Contabilidades ILIMITADAS', '3 usuarios', 'Gráfica T', 'Conciliación', 'SAT Masivo', 'SAT-2237', 'Subdominio propio'],
     limits: { users: 3, clients: 999 },
   },
@@ -32,7 +31,8 @@ const PLANS = [
     precio: 399,
     precio_anual: 3990,
     moneda: 'GTQ',
-    features: ['Dominio .com.gt propio', '10 usuarios', 'Logo en reportes', 'API acceso', 'Capacitación Zoom', 'Soporte prioritario'],
+    recurrente_url: 'https://app.recurrente.com/s/total-app-gt/contapro-empresarial',
+    features: ['Dominio .com.gt propio', '10 usuarios', 'Logo en reportes', 'API acceso', 'WhatsApp alertas', 'Capacitación Zoom', 'Soporte prioritario'],
     limits: { users: 10, clients: 9999 },
   },
 ];
@@ -47,13 +47,7 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
     const { plan } = req.body;
 
     const planInfo = PLANS.find(p => p.id === plan);
-    if (!planInfo) {
-      res.status(400).json({ error: 'Plan no válido' });
-      return;
-    }
-
-    const tenantResult = await pool.query('SELECT email FROM tenants WHERE id = $1', [tenantId]);
-    const tenantEmail = tenantResult.rows[0]?.email || '';
+    if (!planInfo) { res.status(400).json({ error: 'Plan no válido' }); return; }
 
     const result = await pool.query(
       `INSERT INTO subscriptions (tenant_id, plan, estado, monto, periodo_inicio, periodo_fin)
@@ -61,53 +55,29 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
        RETURNING *`,
       [tenantId, plan, planInfo.precio]
     );
-    const sub = result.rows[0];
 
-    const checkoutUrl = await createRecurrenteCheckout({
-      tenant_id: tenantId,
-      subscription_id: sub.id,
-      plan_name: planInfo.nombre,
-      amount: planInfo.precio,
-      currency: 'GTQ',
-      email: tenantEmail,
-      success_url: `${BASE_URL}/app/configuracion?pago=exitoso`,
-      cancel_url: `${BASE_URL}/app/configuracion?pago=cancelado`,
-    });
-
-    res.status(201).json({
+    res.json({
       message: 'Redirigiendo a Recurrente para completar el pago.',
-      checkout_url: checkoutUrl,
-      subscription: sub,
+      checkout_url: planInfo.recurrente_url,
+      subscription_id: result.rows[0].id,
     });
   } catch (error: any) {
-    console.error('Error creando checkout:', error.message);
     res.status(500).json({ error: error.message || 'Error al crear suscripción' });
   }
 });
 
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
-    const signature = req.headers['x-recurrente-signature'] as string || '';
     const { subscription_id, status, metadata } = req.body;
-
-    if (!verifyRecurrenteWebhook(req.body, signature)) {
-      res.status(403).json({ error: 'Firma inválida' });
-      return;
-    }
-
     const subId = subscription_id || metadata?.subscription_id;
-    if (!subId) {
-      res.status(400).json({ error: 'subscription_id requerido' });
-      return;
-    }
+    if (!subId) { res.status(400).json({ error: 'subscription_id requerido' }); return; }
 
-    if (status === 'completed' || status === 'paid' || status === 'succeeded') {
+    if (status === 'completed' || status === 'paid' || status === 'active') {
       const result = await pool.query(
         `UPDATE subscriptions SET estado = 'activo', periodo_inicio = NOW(), periodo_fin = NOW() + INTERVAL '30 days'
          WHERE id = $1 RETURNING *`,
         [subId]
       );
-
       if (result.rows.length > 0) {
         await pool.query(
           'UPDATE tenants SET estado = $1, plan = $2, updated_at = NOW() WHERE id = $3',
@@ -120,7 +90,6 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     res.json({ received: true });
   } catch (error: any) {
-    console.error('Error webhook:', error.message);
     res.status(500).json({ error: 'Error procesando webhook' });
   }
 });
