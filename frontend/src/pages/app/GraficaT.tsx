@@ -84,6 +84,9 @@ export default function GraficaT() {
         const acc = accounts.find((a) => a.code === String(value));
         updated.account_name = acc?.name || '';
       }
+      // Si escribe en Debe, limpia Haber. Si escribe en Haber, limpia Debe.
+      if (field === 'debit' && Number(value) > 0) updated.credit = 0;
+      if (field === 'credit' && Number(value) > 0) updated.debit = 0;
       return updated;
     }));
   };
@@ -251,8 +254,9 @@ export default function GraficaT() {
             </Button>
             {!isBalanced && (
               <p className="text-xs text-gray-400 italic text-right">
-                El total del Debe (Q{totalDebit.toFixed(2)}) debe ser igual al Haber (Q{totalCredit.toFixed(2)}).
-                {totalDebit === 0 && totalCredit === 0 && ' Ingrese montos en filas separadas: una con Debe y otra con Haber.'}
+                {totalDebit === 0 && totalCredit === 0
+                  ? 'Cada línea lleva monto en Debe O en Haber (no ambos). El total Debe debe igualar al total Haber.'
+                  : `Diferencia: Q${Math.abs(diff).toFixed(2)}. El Debe (Q${totalDebit.toFixed(2)}) debe ser igual al Haber (Q${totalCredit.toFixed(2)}).`}
               </p>
             )}
           </div>
