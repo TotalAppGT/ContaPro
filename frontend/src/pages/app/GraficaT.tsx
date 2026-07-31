@@ -84,12 +84,6 @@ export default function GraficaT() {
         const acc = accounts.find((a) => a.code === String(value));
         updated.account_name = acc?.name || '';
       }
-      if (field === 'debit') {
-        updated.credit = 0;
-      }
-      if (field === 'credit') {
-        updated.debit = 0;
-      }
       return updated;
     }));
   };
@@ -256,8 +250,9 @@ export default function GraficaT() {
               <Save className="w-4 h-4" /> Registrar partida
             </Button>
             {!isBalanced && (
-              <p className="text-xs text-gray-400 italic">
-                Debe ingresar montos. El Debe debe ser igual al Haber.
+              <p className="text-xs text-gray-400 italic text-right">
+                El total del Debe (Q{totalDebit.toFixed(2)}) debe ser igual al Haber (Q{totalCredit.toFixed(2)}).
+                {totalDebit === 0 && totalCredit === 0 && ' Ingrese montos en filas separadas: una con Debe y otra con Haber.'}
               </p>
             )}
           </div>
