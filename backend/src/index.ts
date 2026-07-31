@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin';
 import ventasRoutes from './routes/ventas';
 import comprasRoutes from './routes/compras';
 import clientesRoutes from './routes/clientes';
+import usersRoutes from './routes/users';
 import { seedMasterTenant } from './services/seedMaster';
 import fs from 'fs';
 import path from 'path';
@@ -59,6 +60,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ventas', ventasRoutes);
 app.use('/api/compras', comprasRoutes);
 app.use('/api/clientes', clientesRoutes);
+app.use('/api/users', usersRoutes);
 
 // --- Frontend estático (sin auth) ---
 

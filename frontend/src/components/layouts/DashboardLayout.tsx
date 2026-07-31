@@ -26,6 +26,7 @@ const allNavItems: NavItem[] = [
   { to: '/app/reportes', icon: FileBarChart2, label: 'Reportes', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/mi-oficina', icon: Building2, label: 'Mi Oficina', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/clientes', icon: Users, label: 'Clientes', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/usuarios', icon: Users, label: 'Usuarios', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/configuracion', icon: Settings, label: 'Configuración' },
 ];
 
