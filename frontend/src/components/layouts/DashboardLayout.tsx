@@ -50,8 +50,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col h-full bg-sidebar text-white">
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-5 border-b border-slate-700">
-        <Globe className="w-7 h-7 text-primary-400" />
-        {sidebarOpen && <span className="text-lg font-bold">ContaPro</span>}
+        <img src="/logo.svg" alt="ContaPro" className="w-8 h-8" />
+        {sidebarOpen && <span className="text-lg font-bold text-white">ContaPro</span>}
       </div>
 
       {/* User info */}

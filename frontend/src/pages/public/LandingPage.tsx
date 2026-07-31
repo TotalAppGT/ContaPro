@@ -58,7 +58,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <Globe className="w-8 h-8 text-primary-700" />
+              <img src="/logo.svg" alt="ContaPro" className="w-8 h-8" />
               <span className="text-xl font-bold text-gray-900">ContaPro</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
@@ -236,7 +236,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Globe className="w-7 h-7 text-primary-400" />
+                <img src="/logo.svg" alt="ContaPro" className="w-7 h-7" />
                 <span className="text-lg font-bold text-white">ContaPro</span>
               </div>
               <p className="text-sm">Contabilidad profesional para Guatemala. Simplifique su gestión fiscal.</p>
