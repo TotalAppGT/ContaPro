@@ -1,15 +1,12 @@
 # Railway deployment configuration for ContaPro
-# Backend: Express + TypeScript
-# Frontend: static build from React + Vite
 
 [build]
   builder = "nixpacks"
 
 [deploy]
-  startCommand = "cd backend && npm start"
+  startCommand = "cd backend && npm install && npm start"
 
 # Railway auto-injects DATABASE_URL when you add PostgreSQL
-# Add these in Railway dashboard → Variables:
-#   JWT_SECRET = your-secret-key
+# Add in Railway dashboard → service → Variables:
+#   JWT_SECRET = your-secret-key  
 #   BASE_DOMAIN = totalappgt.online
-#   PORT = 3001 (Railway sets $PORT automatically)
