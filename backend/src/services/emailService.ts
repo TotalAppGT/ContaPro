@@ -1,5 +1,5 @@
 const RESEND_KEY = process.env.RESEND_API_KEY || '';
-const RESEND_FROM = process.env.RESEND_FROM || 'ContaPro <hola@totalappgt.online>';
+const RESEND_FROM = process.env.RESEND_FROM || 'ContaPro <no-reply@totalappgt.online>';
 
 export async function enviarEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (!RESEND_KEY) {
