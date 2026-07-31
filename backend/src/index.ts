@@ -13,6 +13,9 @@ import satRoutes from './routes/sat';
 import subscriptionsRoutes from './routes/subscriptions';
 import adminRoutes from './routes/admin';
 import { seedMasterTenant } from './services/seedMaster';
+import fs from 'fs';
+import path from 'path';
+import pool from './db/pool';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -80,11 +83,25 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-app.listen(PORT, async () => {
-  console.log(`ContaPro API corriendo en puerto ${PORT}`);
-  console.log(`URL: http://localhost:${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-  await seedMasterTenant();
-});
+async function startup() {
+  try {
+    const schemaPath = path.join(__dirname, '..', '..', 'database', 'schema.sql');
+    if (fs.existsSync(schemaPath)) {
+      const sql = fs.readFileSync(schemaPath, 'utf-8');
+      await pool.query(sql);
+      console.log('Schema aplicado correctamente.');
+    }
+  } catch (e: any) {
+    console.error('Error aplicando schema:', e.message);
+  }
+
+  app.listen(PORT, async () => {
+    console.log(`ContaPro API corriendo en puerto ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    await seedMasterTenant();
+  });
+}
+
+startup();
 
 export default app;
