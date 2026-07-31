@@ -18,14 +18,14 @@ interface NavItem {
 
 const allNavItems: NavItem[] = [
   { to: '/app', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/app/grafica-t', icon: Calculator, label: 'Gráfica T', planRequired: ['professional', 'enterprise'] },
+  { to: '/app/grafica-t', icon: Calculator, label: 'Gráfica T', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/ventas', icon: ShoppingCart, label: 'Ventas' },
   { to: '/app/compras', icon: ArrowRightLeft, label: 'Compras' },
-  { to: '/app/conciliacion', icon: FileText, label: 'Conciliación', planRequired: ['professional', 'enterprise'] },
-  { to: '/app/sat-masivo', icon: Upload, label: 'SAT Masivo', planRequired: ['professional', 'enterprise'] },
-  { to: '/app/reportes', icon: FileBarChart2, label: 'Reportes', planRequired: ['professional', 'enterprise'] },
-  { to: '/app/mi-oficina', icon: Building2, label: 'Mi Oficina', planRequired: ['professional', 'enterprise'] },
-  { to: '/app/clientes', icon: Users, label: 'Clientes', planRequired: ['professional', 'enterprise'] },
+  { to: '/app/conciliacion', icon: FileText, label: 'Conciliación', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/sat-masivo', icon: Upload, label: 'SAT Masivo', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/reportes', icon: FileBarChart2, label: 'Reportes', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/mi-oficina', icon: Building2, label: 'Mi Oficina', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/clientes', icon: Users, label: 'Clientes', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/configuracion', icon: Settings, label: 'Configuración' },
 ];
 
@@ -61,11 +61,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <p className="text-xs text-slate-400 truncate">{user.name}</p>
           <span className={clsx(
             'inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium',
-            user.plan === 'professional' ? 'bg-blue-500/20 text-blue-300' :
-            user.plan === 'enterprise' ? 'bg-purple-500/20 text-purple-300' :
+            user.plan === 'profesional' ? 'bg-blue-500/20 text-blue-300' :
+            user.plan === 'empresarial' ? 'bg-purple-500/20 text-purple-300' :
             'bg-slate-500/20 text-slate-300'
           )}>
-            {user.plan === 'personal' ? 'Personal' : user.plan === 'professional' ? 'Profesional' : 'Empresarial'}
+            {user.plan === 'personal' ? 'Personal' : user.plan === 'profesional' ? 'Profesional' : 'Empresarial'}
           </span>
         </div>
       )}
