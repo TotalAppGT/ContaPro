@@ -43,7 +43,7 @@ export interface Plan {
   features: string[];
 }
 
-export type PlanType = 'personal' | 'professional' | 'enterprise';
+export type PlanType = 'personal' | 'profesional' | 'empresarial';
 export type RegimeType = 'general' | 'pequenio' | 'simplificado';
 export type PolicyType = 'Diario' | 'Ajuste' | 'Ingreso' | 'Egreso';
 export type AccountType = 'Activo' | 'Pasivo' | 'Capital' | 'Ingreso' | 'Egreso' | 'Costo';

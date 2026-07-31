@@ -24,7 +24,13 @@ interface RegisterData {
 
 interface LoginResponse {
   token: string;
-  user: User;
+  user: { id: string; email: string; nombre: string; rol: string };
+  tenant: { id: string; nombre: string; nit: string; subdomain: string; plan: string };
+}
+
+interface MeResponse {
+  user: { id: string; email: string; nombre: string; rol: string };
+  tenant: { id: string; nombre: string; nit: string; subdomain: string; plan: string; logo?: string };
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -36,21 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = useCallback(async () => {
     const storedToken = localStorage.getItem('contapro_token');
-    if (!storedToken) {
-      setIsLoading(false);
-      return;
-    }
+    if (!storedToken) { setIsLoading(false); return; }
     try {
-      const data = await api.get<{ user: User }>('/auth/me');
-      setUser(data.user);
+      const data = await api.get<MeResponse>('/auth/me');
+      const u = data.user; const t = data.tenant;
+      setUser({
+        id: u.id, email: u.email, name: u.nombre, role: u.rol,
+        tenant_id: t.id, tenant_name: t.nombre, plan: t.plan as PlanType
+      });
       setToken(storedToken);
     } catch {
       localStorage.removeItem('contapro_token');
-      setUser(null);
-      setToken(null);
-    } finally {
-      setIsLoading(false);
-    }
+      setUser(null); setToken(null);
+    } finally { setIsLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -61,7 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await api.post<LoginResponse>('/auth/login', { email, password });
     localStorage.setItem('contapro_token', data.token);
     setToken(data.token);
-    setUser(data.user);
+    const u = data.user; const t = data.tenant;
+    setUser({
+      id: u.id, email: u.email, name: u.nombre, role: u.rol,
+      tenant_id: t.id, tenant_name: t.nombre, plan: t.plan as PlanType
+    });
   };
 
   const loginAsTenant = async (tenantId: string, email: string, password: string) => {
