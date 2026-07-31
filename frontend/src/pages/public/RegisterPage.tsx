@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/Button';
 import type { PlanType } from '@/types';
 
 const plans: { name: PlanType; label: string; price: number; features: string[] }[] = [
-  { name: 'personal', label: 'Personal', price: 79, features: ['1 empresa', 'Ventas y compras', 'Reportes IVA'] },
-  { name: 'professional', label: 'Profesional', price: 199, features: ['Hasta 10 empresas', 'Gráfica T', 'Conciliación', 'SAT Masivo'] },
-  { name: 'enterprise', label: 'Empresarial', price: 399, features: ['Empresas ilimitadas', 'Usuarios ilimitados', 'API', 'Soporte 24/7'] },
+  { name: 'personal', label: 'Personal', price: 79, features: ['1 empresa', 'Ventas y compras', 'Reportes IVA', 'Soporte email'] },
+  { name: 'profesional', label: 'Profesional', price: 199, features: ['Contabilidades ilimitadas', '3 usuarios', 'Gráfica T', 'Conciliación', 'SAT Masivo', 'Reportes fiscales', 'Subdominio propio'] },
+  { name: 'empresarial', label: 'Empresarial', price: 399, features: ['10 usuarios', 'Dominio .com.gt propio', 'API acceso', 'WhatsApp alertas', 'Soporte prioritario', 'Todo lo del plan Profesional'] },
 ];
 
 export default function RegisterPage() {

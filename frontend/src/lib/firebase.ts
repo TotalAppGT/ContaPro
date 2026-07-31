@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBtdzASSqHz2oirxJGl6deGkfIUBMUnO_c",
@@ -25,4 +25,11 @@ export async function firebaseRegister(email: string, password: string): Promise
 
 export async function firebaseLogout(): Promise<void> {
   await signOut(auth);
+}
+
+export async function firebaseGoogleLogin(): Promise<{ token: string; email: string; name: string }> {
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  const token = await result.user.getIdToken();
+  return { token, email: result.user.email || '', name: result.user.displayName || '' };
 }

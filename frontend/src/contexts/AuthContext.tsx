@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, PlanType } from '@/types';
 import { api } from '@/lib/api';
-import { firebaseLogin, firebaseRegister, firebaseLogout } from '@/lib/firebase';
+import { firebaseLogin, firebaseRegister, firebaseLogout, firebaseGoogleLogin } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -9,7 +9,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<{ needsRegister: boolean; email: string; name: string; fbToken: string }>;
   register: (data: RegisterData) => Promise<void>;
+  registerWithGoogle: (data: { name: string; nit: string; subdomain: string; plan: PlanType; email: string; fbToken: string }) => Promise<void>;
   logout: () => void;
 }
 
@@ -71,6 +73,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     saveSession(data.token, data.user, data.tenant);
   };
 
+  const loginWithGoogle = async () => {
+    const fb = await firebaseGoogleLogin();
+    try {
+      const data = await api.post<LoginResponse>('/auth/firebase', { firebaseToken: fb.token, email: fb.email });
+      saveSession(data.token, data.user, data.tenant);
+      return { needsRegister: false, email: fb.email, name: fb.name, fbToken: fb.token };
+    } catch (e: any) {
+      return { needsRegister: true, email: fb.email, name: fb.name, fbToken: fb.token };
+    }
+  };
+
+  const registerWithGoogle = async (data: { name: string; nit: string; subdomain: string; plan: PlanType; email: string; fbToken: string }) => {
+    const res = await api.post<LoginResponse>('/auth/firebase-register', {
+      firebaseToken: data.fbToken, email: data.email,
+      name: data.name, nit: data.nit, subdomain: data.subdomain, plan: data.plan,
+    });
+    saveSession(res.token, res.user, res.tenant);
+  };
+
   const register = async (data: RegisterData) => {
     const firebaseToken = await firebaseRegister(data.email, data.password);
     const res = await api.post<LoginResponse>('/auth/firebase-register', {
@@ -87,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, login, loginWithGoogle, register, registerWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
