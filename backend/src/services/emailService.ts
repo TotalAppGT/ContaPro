@@ -1,27 +1,25 @@
-import nodemailer from 'nodemailer';
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-  },
-});
+const RESEND_KEY = process.env.RESEND_API_KEY || '';
+const RESEND_FROM = process.env.RESEND_FROM || 'ContaPro <hola@totalappgt.online>';
 
 export async function enviarEmail(to: string, subject: string, html: string): Promise<boolean> {
-  if (!process.env.SMTP_USER) {
+  if (!RESEND_KEY) {
     console.log('[EMAIL] Simulado - Para:', to, 'Asunto:', subject);
     return true;
   }
   try {
-    await transporter.sendMail({
-      from: `"ContaPro" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: RESEND_FROM, to, subject, html }),
     });
+    if (!res.ok) {
+      const err = await res.json();
+      console.error('[EMAIL] Error Resend:', JSON.stringify(err));
+      return false;
+    }
     console.log('[EMAIL] Enviado a:', to);
     return true;
   } catch (e: any) {
