@@ -44,8 +44,23 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await api.get<FinancialReport>('/contabilidad/reporte-financiero', { mes: '7', anio: '2026' });
-        setReport(data);
+        const now = new Date();
+        const mes = String(now.getMonth() + 1);
+        const anio = String(now.getFullYear());
+        const data = await api.get<any>('/contabilidad/reporte-financiero', { mes, anio });
+        const r = data.resumen;
+        if (r) {
+          setReport({
+            income: Number(r.ingresos_total) || 0,
+            expenses: Number(r.gastos_total) || 0,
+            profit: Number(r.utilidad) || 0,
+            margin: r.ingresos_total > 0 ? (Number(r.utilidad) / Number(r.ingresos_total)) * 100 : 0,
+            iva_to_pay: Number(r.pasivo_capital_total) || 0,
+            period: `${now.toLocaleString('es-GT', { month: 'long' })} ${anio}`,
+          });
+        } else {
+          throw new Error('No data');
+        }
       } catch {
         setReport({
           income: 67850.00, expenses: 42300.00, profit: 25550.00,

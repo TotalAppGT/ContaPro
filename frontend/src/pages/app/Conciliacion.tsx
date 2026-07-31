@@ -94,10 +94,17 @@ export default function Conciliacion() {
     }
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     try {
-      await api.post('/conciliacion/transacciones', { ...form, cuenta_id: selectedAccount });
+      await api.post('/conciliacion/transacciones', {
+        cuenta_id: selectedAccount,
+        date: form.date,
+        description: form.description,
+        reference: form.reference,
+        debit: parseFloat(form.debit) || 0,
+        credit: parseFloat(form.credit) || 0,
+      });
       toast.success('Transacción agregada');
       setShowModal(false);
       loadTransactions();
@@ -228,21 +235,18 @@ export default function Conciliacion() {
         />
       </Card>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nuevo movimiento" size="sm"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setShowModal(false)}>Cancelar</Button>
-            <Button onClick={handleAdd}>Guardar</Button>
-          </>
-        }
-      >
-        <form className="space-y-4">
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nuevo movimiento" size="sm">
+        <form onSubmit={(e) => { e.preventDefault(); handleAdd(e); }} className="space-y-4">
           <Input label="Fecha" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <Input label="Descripción" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <Input label="Referencia" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="CHQ-XXXX" />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Débito (Q)" type="number" step="0.01" value={form.debit} onChange={(e) => setForm({ ...form, debit: e.target.value })} />
             <Input label="Crédito (Q)" type="number" step="0.01" value={form.credit} onChange={(e) => setForm({ ...form, credit: e.target.value })} />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button variant="outline" type="button" onClick={() => setShowModal(false)}>Cancelar</Button>
+            <Button type="submit">Guardar</Button>
           </div>
         </form>
       </Modal>

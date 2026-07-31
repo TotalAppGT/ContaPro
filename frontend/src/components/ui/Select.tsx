@@ -14,10 +14,10 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, placeholder, className, id, ...props }, ref) => {
-    const selectId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  ({ label, error, options, placeholder, className, ...props }, ref) => {
+    const selectId = props.id || label?.toLowerCase().replace(/\s+/g, '-');
     return (
-      <div className="w-full">
+      <div className={clsx('w-full', className)}>
         {label && (
           <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-1">
             {label}
@@ -33,7 +33,6 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             error
               ? 'border-red-300 text-red-900'
               : 'border-gray-300 text-gray-900',
-            className
           )}
           {...props}
         >

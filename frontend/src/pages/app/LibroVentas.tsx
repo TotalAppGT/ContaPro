@@ -1,10 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
+import { Plus, FileDown } from 'lucide-react';
+import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
+
+function toNumber(v: FormDataEntryValue): number {
+  const n = parseFloat(v as string);
+  return isNaN(n) ? 0 : n;
+}
+
+function downloadCSV(ventas: any[], filename: string) {
+  const BOM = '\uFEFF';
+  const headers = ['NIT Emisor', 'Nombre', 'Tipo Documento', 'Serie', 'Número', 'Fecha', 'Base Imponible', 'IVA', 'Total'];
+  const rows = ventas.map((v) => [
+    `"${v.nit_cliente || ''}"`,
+    `"${v.nombre_cliente || ''}"`,
+    `"${v.serie || 'FEL'}"`,
+    `"${v.serie || ''}"`,
+    `"${v.numero_documento || ''}"`,
+    `"${v.fecha || ''}"`,
+    Number(v.base_imponible || 0).toFixed(2),
+    Number(v.iva || 0).toFixed(2),
+    Number(v.total || 0).toFixed(2),
+  ].join(','));
+  const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function LibroVentas() {
   const [ventas, setVentas] = useState<any[]>([]);
@@ -26,10 +55,21 @@ export default function LibroVentas() {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const body: any = {};
-    form.forEach((v, k) => { body[k] = v; });
+    form.forEach((v, k) => {
+      if (k === 'base_imponible' || k === 'iva' || k === 'total' || k === 'exento') {
+        body[k] = toNumber(v);
+      } else {
+        body[k] = v;
+      }
+    });
     await api.post('/ventas', body);
     setShowAdd(false);
     load();
+  };
+
+  const handleDownload = () => {
+    const now = new Date().toISOString().slice(0, 10);
+    downloadCSV(ventas, `libro-ventas-${now}.csv`);
   };
 
   const total = ventas.reduce((s: number, v: any) => s + (Number(v.total) || 0), 0);
@@ -41,13 +81,20 @@ export default function LibroVentas() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Libro de Ventas</h2>
-        <Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4 mr-1" /> Agregar</Button>
+        <div className="flex items-center gap-2">
+          {ventas.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <FileDown className="w-4 h-4" /> Descargar Excel
+            </Button>
+          )}
+          <Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4 mr-1" /> Agregar</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <Card title="Total Ventas" subtitle={`Q ${total.toFixed(2)}`} />
-        <Card title="IVA Generado" subtitle={`Q ${iva.toFixed(2)}`} />
-        <Card title="Documentos" subtitle={`${ventas.length}`} />
+        <Card><CardHeader title="Total Ventas" subtitle={`Q ${total.toFixed(2)}`} /></Card>
+        <Card><CardHeader title="IVA Generado" subtitle={`Q ${iva.toFixed(2)}`} /></Card>
+        <Card><CardHeader title="Documentos" subtitle={`${ventas.length}`} /></Card>
       </div>
 
       <div className="bg-white rounded-xl shadow overflow-hidden">
@@ -81,7 +128,7 @@ export default function LibroVentas() {
         </table>
       </div>
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Agregar Venta">
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Agregar Venta">
         <form onSubmit={handleAdd} className="space-y-3">
           <Input label="Fecha" name="fecha" type="date" required />
           <div className="grid grid-cols-2 gap-3">
