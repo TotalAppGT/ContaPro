@@ -63,6 +63,13 @@ router.post('/register', async (req: Request, res: Response) => {
     );
     const user = userResult.rows[0];
 
+    // Crear suscripción trial de 14 días
+    await client.query(
+      `INSERT INTO subscriptions (tenant_id, plan, estado, monto, periodo_inicio, periodo_fin)
+       VALUES ($1, $2, 'trialing', 0, NOW(), NOW() + INTERVAL '14 days')`,
+      [tenant.id, planFinal]
+    );
+
     await client.query('COMMIT');
     await seedChartOfAccounts(tenant.id);
 
@@ -110,7 +117,7 @@ router.post('/login', async (req: Request, res: Response) => {
       res.status(403).json({ error: 'Usuario desactivado. Contacte al administrador.' });
       return;
     }
-    if (user.tenant_estado !== 'activo') {
+    if (user.tenant_estado !== 'activo' && user.tenant_estado !== 'trial') {
       res.status(403).json({ error: 'La cuenta se encuentra suspendida o cancelada.' });
       return;
     }
