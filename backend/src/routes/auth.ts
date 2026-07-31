@@ -8,6 +8,7 @@ import { enviarEmail, emailBienvenida } from '../services/emailService';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyBtdzASSqHz2oirxJGl6deGkfIUBMUnO_c';
 
 function generateToken(user: {
   id: string;
@@ -21,6 +22,21 @@ function generateToken(user: {
     JWT_SECRET,
     { expiresIn: '24h' }
   );
+}
+
+async function verifyFirebaseToken(firebaseToken: string): Promise<{ uid: string; email: string } | null> {
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: firebaseToken }),
+    });
+    const data = await res.json();
+    if (data.users && data.users[0]) {
+      return { uid: data.users[0].localId, email: data.users[0].email };
+    }
+    return null;
+  } catch { return null; }
 }
 
 router.post('/register', async (req: Request, res: Response) => {

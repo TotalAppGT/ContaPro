@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { User, PlanType } from '@/types';
 import { api } from '@/lib/api';
+import { firebaseLogin, firebaseRegister, firebaseLogout } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -8,7 +9,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginAsTenant: (tenantId: string, email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
 }
@@ -40,16 +40,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const saveSession = (jwt: string, u: any, t: any) => {
+    localStorage.setItem('contapro_token', jwt);
+    setToken(jwt);
+    setUser({
+      id: u.id, email: u.email, name: u.nombre, role: u.rol,
+      tenant_id: t.id, tenant_name: t.nombre, plan: t.plan as PlanType
+    });
+  };
+
   const loadUser = useCallback(async () => {
     const storedToken = localStorage.getItem('contapro_token');
     if (!storedToken) { setIsLoading(false); return; }
     try {
       const data = await api.get<MeResponse>('/auth/me');
       const u = data.user; const t = data.tenant;
-      setUser({
-        id: u.id, email: u.email, name: u.nombre, role: u.rol,
-        tenant_id: t.id, tenant_name: t.nombre, plan: t.plan as PlanType
-      });
+      setUser({ id: u.id, email: u.email, name: u.nombre, role: u.rol, tenant_id: t.id, tenant_name: t.nombre, plan: t.plan as PlanType });
       setToken(storedToken);
     } catch {
       localStorage.removeItem('contapro_token');
@@ -57,50 +63,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally { setIsLoading(false); }
   }, []);
 
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+  useEffect(() => { loadUser(); }, [loadUser]);
 
   const login = async (email: string, password: string) => {
-    const data = await api.post<LoginResponse>('/auth/login', { email, password });
-    localStorage.setItem('contapro_token', data.token);
-    setToken(data.token);
-    const u = data.user; const t = data.tenant;
-    setUser({
-      id: u.id, email: u.email, name: u.nombre, role: u.rol,
-      tenant_id: t.id, tenant_name: t.nombre, plan: t.plan as PlanType
-    });
-  };
-
-  const loginAsTenant = async (tenantId: string, email: string, password: string) => {
-    const data = await api.post<LoginResponse>('/auth/login-as-tenant', { tenant_id: tenantId, email, password });
-    localStorage.setItem('contapro_token', data.token);
-    setToken(data.token);
-    setUser(data.user);
+    const firebaseToken = await firebaseLogin(email, password);
+    const data = await api.post<LoginResponse>('/auth/firebase', { firebaseToken, email });
+    saveSession(data.token, data.user, data.tenant);
   };
 
   const register = async (data: RegisterData) => {
-    await api.post('/auth/register', data);
+    const firebaseToken = await firebaseRegister(data.email, data.password);
+    const res = await api.post<LoginResponse>('/auth/firebase-register', {
+      firebaseToken, email: data.email,
+      name: data.name, nit: data.nit, subdomain: data.subdomain, plan: data.plan,
+    });
+    saveSession(res.token, res.user, res.tenant);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try { await firebaseLogout(); } catch {}
     localStorage.removeItem('contapro_token');
-    setUser(null);
-    setToken(null);
+    setUser(null); setToken(null);
   };
 
-  const value: AuthContextType = {
-    user,
-    token,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    loginAsTenant,
-    register,
-    logout,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
