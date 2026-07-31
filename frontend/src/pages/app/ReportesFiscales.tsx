@@ -38,10 +38,10 @@ export default function ReportesFiscales() {
     setIsLoading(true);
     try {
       if (activeTab === 'sat2237') {
-        const data = await api.get<SAT2237Report>('/reports/sat-2237', { month, year });
+        const data = await api.get<SAT2237Report>('/sat/sat2237', { mes: month, anio: year });
         setSatReport(data);
       } else if (activeTab === 'cruce') {
-        const data = await api.get<IVACruceReport[]>('/reports/iva-cruce', { month, year });
+        const data = await api.get<IVACruceReport[]>('/sat/resumen-cruce', { mes: month, anio: year });
         setCruceData(data);
       }
     } catch {

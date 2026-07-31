@@ -36,9 +36,9 @@ export default function MiOficina() {
       if (logoFile) {
         const formData = new FormData();
         formData.append('logo', logoFile);
-        await api.upload('/office/logo', formData);
+        await api.upload('/tenants/logo', formData);
       }
-      await api.patch('/office', form);
+      await api.patch('/tenants', form);
       toast.success('Datos de la oficina actualizados');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar');

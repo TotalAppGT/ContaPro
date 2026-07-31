@@ -37,8 +37,8 @@ export default function GraficaT() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    api.get<ChartAccount[]>('/accounts')
-      .then(setAccounts)
+    api.get<{ cuentas: ChartAccount[] }>('/contabilidad/catalogo')
+      .then((data) => setAccounts(data.cuentas))
       .catch(() => {
         setAccounts([
           { id: '1', code: '1.1.01', name: 'Caja', type: 'Activo', parent_id: null, level: 1, is_accept_movement: true, balance: 0 },
@@ -89,7 +89,7 @@ export default function GraficaT() {
     }
     setIsSubmitting(true);
     try {
-      await api.post('/journal-entries', {
+      await api.post('/contabilidad/asientos', {
         date, type: policyType, concept,
         lines: lines.filter((l) => l.account_code).map((l) => ({
           account_code: l.account_code,

@@ -44,7 +44,7 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await api.get<FinancialReport>('/reports/summary?period=current');
+        const data = await api.get<FinancialReport>('/contabilidad/reporte-financiero', { mes: '7', anio: '2026' });
         setReport(data);
       } catch {
         setReport({

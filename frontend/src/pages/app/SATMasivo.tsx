@@ -97,7 +97,7 @@ export default function SATMasivo() {
     }, 400);
 
     try {
-      await api.post('/sat-masivo/process', {
+      await api.post('/sat/carga-masiva', {
         entries: data,
         type,
         grouping,

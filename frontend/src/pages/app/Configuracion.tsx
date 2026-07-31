@@ -1,46 +1,12 @@
-import React, { useState } from 'react';
-import { Save, Shield, Calendar, CreditCard, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React from 'react';
+import { Shield, Calendar, CreditCard } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
 
 export default function Configuracion() {
   const { user } = useAuth();
-  const [currentPass, setCurrentPass] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [confirmPass, setConfirmPass] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPass !== confirmPass) {
-      toast.error('Las contraseñas no coinciden');
-      return;
-    }
-    if (newPass.length < 8) {
-      toast.error('La contraseña debe tener al menos 8 caracteres');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await api.patch('/auth/change-password', {
-        current_password: currentPass,
-        new_password: newPass,
-      });
-      toast.success('Contraseña actualizada exitosamente');
-      setCurrentPass('');
-      setNewPass('');
-      setConfirmPass('');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al cambiar contraseña');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const planLabel = user?.plan === 'personal' ? 'Personal' : user?.plan === 'professional' ? 'Profesional' : 'Empresarial';
   const planColor = user?.plan === 'personal' ? 'info' : user?.plan === 'professional' ? 'purple' : 'success';
@@ -79,41 +45,13 @@ export default function Configuracion() {
         </div>
       </Card>
 
-      {/* Change password */}
+      {/* Change password - próximamente */}
       <Card>
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <Shield className="w-5 h-5 text-primary-700" />
           <h3 className="text-lg font-semibold text-gray-900">Cambiar contraseña</h3>
         </div>
-        <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
-          <Input
-            label="Contraseña actual"
-            type="password"
-            value={currentPass}
-            onChange={(e) => setCurrentPass(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-          <Input
-            label="Nueva contraseña"
-            type="password"
-            value={newPass}
-            onChange={(e) => setNewPass(e.target.value)}
-            placeholder="Mínimo 8 caracteres"
-            required
-          />
-          <Input
-            label="Confirmar nueva contraseña"
-            type="password"
-            value={confirmPass}
-            onChange={(e) => setConfirmPass(e.target.value)}
-            placeholder="Repita la contraseña"
-            required
-          />
-          <Button type="submit" isLoading={isSubmitting}>
-            <Save className="w-4 h-4" /> Actualizar contraseña
-          </Button>
-        </form>
+        <p className="text-sm text-gray-500">Cambiar contraseña próximamente.</p>
       </Card>
 
       {/* Theme (placeholder) */}

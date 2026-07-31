@@ -31,10 +31,10 @@ export default function Conciliacion() {
   });
 
   useEffect(() => {
-    api.get<BankAccount[]>('/bank-accounts')
+    api.get<{ cuentas: BankAccount[] }>('/conciliacion/cuentas')
       .then((data) => {
-        setAccounts(data);
-        if (data.length > 0) setSelectedAccount(data[0].id);
+        setAccounts(data.cuentas);
+        if (data.cuentas.length > 0) setSelectedAccount(data.cuentas[0].id);
       })
       .catch(() => {
         setAccounts([
@@ -56,8 +56,8 @@ export default function Conciliacion() {
       if (statusFilter !== 'all') params.status = statusFilter;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
-      const data = await api.get<BankTransaction[]>(`/bank-accounts/${selectedAccount}/transactions`, params);
-      setTransactions(data);
+      const data = await api.get<{ transacciones: BankTransaction[] }>('/conciliacion/transacciones', { ...params, cuenta_id: selectedAccount });
+      setTransactions(data.transacciones);
     } catch {
       setTransactions(generateDummy(selectedAccount));
     }
@@ -85,7 +85,7 @@ export default function Conciliacion() {
   const handleBulkReconcile = async () => {
     if (reconciling.size === 0) return;
     try {
-      await api.post('/bank-accounts/reconcile', { transaction_ids: Array.from(reconciling) });
+      await Promise.all(Array.from(reconciling).map((id) => api.patch(`/conciliacion/transacciones/${id}`)));
       toast.success(`${reconciling.size} transacciones conciliadas`);
       setReconciling(new Set());
       loadTransactions();
@@ -97,7 +97,7 @@ export default function Conciliacion() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post(`/bank-accounts/${selectedAccount}/transactions`, form);
+      await api.post('/conciliacion/transacciones', { ...form, cuenta_id: selectedAccount });
       toast.success('Transacción agregada');
       setShowModal(false);
       loadTransactions();
