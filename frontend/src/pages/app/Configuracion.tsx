@@ -29,6 +29,14 @@ export default function Configuracion() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  useEffect(() => {
     api.get<any>('/tenants')
       .then((data) => setSubscription(data.tenant || data))
       .catch(() => setSubscription(null))

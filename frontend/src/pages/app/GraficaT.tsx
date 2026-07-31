@@ -65,7 +65,7 @@ export default function GraficaT() {
   const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
   const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
   const diff = totalDebit - totalCredit;
-  const isBalanced = Math.abs(diff) < 0.01 && (totalDebit > 0 || totalCredit > 0);
+  const isBalanced = Math.abs(diff) < 0.01 && totalDebit > 0 && totalCredit > 0;
 
   const addLine = () => {
     setLines([...lines, { id: crypto.randomUUID(), account_code: '', account_name: '', concept: '', debit: 0, credit: 0 }]);
@@ -251,9 +251,16 @@ export default function GraficaT() {
           <Button variant="outline" size="sm" onClick={addLine}>
             <Plus className="w-4 h-4" /> Agregar línea
           </Button>
-          <Button onClick={handleSubmit} disabled={!isBalanced} isLoading={isSubmitting}>
-            <Save className="w-4 h-4" /> Registrar partida
-          </Button>
+          <div className="flex flex-col items-end gap-1">
+            <Button onClick={handleSubmit} disabled={!isBalanced} isLoading={isSubmitting}>
+              <Save className="w-4 h-4" /> Registrar partida
+            </Button>
+            {!isBalanced && (
+              <p className="text-xs text-gray-400 italic">
+                Debe ingresar montos. El Debe debe ser igual al Haber.
+              </p>
+            )}
+          </div>
         </div>
       </Card>
     </div>

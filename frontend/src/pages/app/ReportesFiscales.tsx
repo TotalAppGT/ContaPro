@@ -192,7 +192,13 @@ export default function ReportesFiscales() {
       )}
 
       {!loading && !error && data && tab === 'sat2237' && (
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+        <div className="report-content" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+          <div className="print-header" style={{ display: 'none' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px' }}>ContaPro - Sistema de Contabilidad Profesional</h1>
+            <p style={{ textAlign: 'center', fontSize: '13px', marginBottom: '2px' }}>Guatemala, C.A.</p>
+            <p style={{ textAlign: 'center', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>Reporte Fiscal - SAT-2237 IVA Mensual - {monthLabel} {year}</p>
+            <hr style={{ marginBottom: '20px', borderColor: '#000' }} />
+          </div>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Formulario SAT-2237 — IVA Mensual</h3>
           <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px', marginBottom: '20px' }}>
             <p><strong>Período:</strong> {monthLabel} {year}</p>
@@ -238,7 +244,13 @@ export default function ReportesFiscales() {
       )}
 
       {!loading && !error && data && tab === 'cruce' && (
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+        <div className="report-content" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+          <div className="print-header" style={{ display: 'none' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px' }}>ContaPro - Sistema de Contabilidad Profesional</h1>
+            <p style={{ textAlign: 'center', fontSize: '13px', marginBottom: '2px' }}>Guatemala, C.A.</p>
+            <p style={{ textAlign: 'center', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>Reporte Fiscal - Resumen Cruzado IVA - {monthLabel} {year}</p>
+            <hr style={{ marginBottom: '20px', borderColor: '#000' }} />
+          </div>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Resumen Cruzado IVA — {monthLabel} {year}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
@@ -262,7 +274,13 @@ export default function ReportesFiscales() {
       )}
 
       {!loading && !error && data && tab === 'integracion' && (
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+        <div className="report-content" style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
+          <div className="print-header" style={{ display: 'none' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px' }}>ContaPro - Sistema de Contabilidad Profesional</h1>
+            <p style={{ textAlign: 'center', fontSize: '13px', marginBottom: '2px' }}>Guatemala, C.A.</p>
+            <p style={{ textAlign: 'center', fontSize: '14px', fontWeight: '600', marginBottom: '16px' }}>Reporte Fiscal - Integración de Saldos - {monthLabel} {year}</p>
+            <hr style={{ marginBottom: '20px', borderColor: '#000' }} />
+          </div>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Integración de Saldos — {monthLabel} {year}</h3>
           {data.reporte ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -301,6 +319,15 @@ export default function ReportesFiscales() {
         </div>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .report-content, .report-content * { visibility: visible; }
+          .report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          .report-content .print-header { display: block !important; }
+          @page { size: letter; margin: 1.5cm; }
+        }
+      `}</style>
     </div>
   );
 }

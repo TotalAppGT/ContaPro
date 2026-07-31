@@ -31,3 +31,11 @@
     @apply bg-accent-500 hover:bg-accent-600 text-gray-900 font-semibold py-2.5 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg;
   }
 }
+
+.dark body { background: #0f172a; color: #e2e8f0; }
+.dark .bg-white { background: #1e293b !important; }
+.dark .text-gray-900 { color: #e2e8f0 !important; }
+.dark .text-gray-600, .dark .text-gray-500 { color: #94a3b8 !important; }
+.dark .bg-gray-50 { background: #1e293b !important; }
+.dark .border-gray-200, .dark .border-gray-100 { border-color: #334155 !important; }
+.dark .bg-white\/80 { background: #1e293bcc !important; }
