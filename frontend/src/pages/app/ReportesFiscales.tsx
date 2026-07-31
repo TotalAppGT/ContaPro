@@ -86,7 +86,70 @@ export default function ReportesFiscales() {
     XLSX.writeFile(wb, `ContaPro_${tab}_${month}_${year}.xlsx`);
   };
 
-  const imprimir = () => window.print();
+  const imprimir = () => {
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) return;
+    const title = tab === 'sat2237' ? 'Declaración de IVA - SAT-2237' : tab === 'cruce' ? 'Resumen Cruzado de IVA' : 'Integración de Saldos Contables';
+    let body = '';
+
+    if (tab === 'sat2237' && data) {
+      body = `<table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+        <tr style="background:#f5f5f5"><td style="padding:8px;font-weight:700;border:1px solid #ccc">Concepto</td><td style="padding:8px;text-align:right;font-weight:700;border:1px solid #ccc">Monto (Q)</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc" colspan="2"><strong>Ventas del Período</strong></td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc">Total Ventas</td><td style="padding:8px;text-align:right;border:1px solid #ccc">${fmt(data.ventas?.total)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc">Base Imponible</td><td style="padding:8px;text-align:right;border:1px solid #ccc">${fmt(data.ventas?.base_imponible)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc;font-weight:700">IVA Débito Fiscal</td><td style="padding:8px;text-align:right;border:1px solid #ccc;font-weight:700">${fmt(data.ventas?.iva)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc" colspan="2"><strong>Compras del Período</strong></td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc">Total Compras</td><td style="padding:8px;text-align:right;border:1px solid #ccc">${fmt(data.compras?.total)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc">Base Imponible</td><td style="padding:8px;text-align:right;border:1px solid #ccc">${fmt(data.compras?.base_imponible)}</td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc;font-weight:700">IVA Crédito Fiscal</td><td style="padding:8px;text-align:right;border:1px solid #ccc;font-weight:700">${fmt(data.compras?.iva)}</td></tr>
+      </table>
+      <div style="border:2px solid #0A2472;border-radius:8px;padding:16px;text-align:center;margin:16px 0">
+        <div style="display:inline-block;margin:0 24px"><p style="color:#666;font-size:11px;margin:0">Débito Fiscal</p><p style="font-size:18px;font-weight:700;color:#dc2626;margin:4px 0">${fmt(data.calculo?.debito_fiscal)}</p></div>
+        <div style="display:inline-block;margin:0 24px"><p style="color:#666;font-size:11px;margin:0">Crédito Fiscal</p><p style="font-size:18px;font-weight:700;color:#16a34a;margin:4px 0">${fmt(data.calculo?.credito_fiscal)}</p></div>
+        <div style="display:inline-block;margin:0 24px"><p style="color:#666;font-size:11px;margin:0">${data.calculo?.resultado || 'Resultado'}</p><p style="font-size:22px;font-weight:800;color:#0A2472;margin:4px 0">${fmt(data.calculo?.monto)}</p></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:48px;padding-top:16px">
+        <div style="text-align:center;width:40%"><div style="border-top:1px solid #000;padding-top:8px">Firma del Contribuyente</div></div>
+        <div style="text-align:center;width:40%"><div style="border-top:1px solid #000;padding-top:8px">Firma del Contador</div></div>
+      </div>`;
+    } else if (tab === 'cruce' && data) {
+      body = `<table style="width:100%;border-collapse:collapse">
+        <tr style="background:#f5f5f5"><th style="padding:8px;border:1px solid #ccc;text-align:left">Concepto</th><th style="padding:8px;border:1px solid #ccc;text-align:right">Ventas (Q)</th><th style="padding:8px;border:1px solid #ccc;text-align:right">Compras (Q)</th><th style="padding:8px;border:1px solid #ccc;text-align:right">Variación (Q)</th></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc">IVA en Libros</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${fmt(data.cruce_ventas?.iva_libro)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${fmt(data.cruce_compras?.iva_libro)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right"></td></tr>
+        <tr><td style="padding:8px;border:1px solid #ccc">IVA en Mayor</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${fmt(data.cruce_ventas?.iva_mayor)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${fmt(data.cruce_compras?.iva_mayor)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right"></td></tr>
+        <tr style="font-weight:700"><td style="padding:8px;border:1px solid #ccc">Variación</td><td style="padding:8px;border:1px solid #ccc;text-align:right;color:${Math.abs(data.cruce_ventas?.variacion||0)>1?'#dc2626':'#16a34a'}">${fmt(data.cruce_ventas?.variacion)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right;color:${Math.abs(data.cruce_compras?.variacion||0)>1?'#dc2626':'#16a34a'}">${fmt(data.cruce_compras?.variacion)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right"></td></tr>
+      </table>`;
+    } else if (tab === 'integracion' && data?.reporte) {
+      let rows = '';
+      data.reporte.filter((r: any) => (Number(r.debe) || 0) > 0 || (Number(r.haber) || 0) > 0).forEach((r: any) => {
+        rows += `<tr><td style="padding:8px;border:1px solid #ccc">${r.codigo}</td><td style="padding:8px;border:1px solid #ccc">${r.nombre}</td><td style="padding:8px;border:1px solid #ccc">${r.tipo}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${fmt(r.debe)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right">${fmt(r.haber)}</td><td style="padding:8px;border:1px solid #ccc;text-align:right;font-weight:700">${fmt(r.saldo)}</td></tr>`;
+      });
+      rows += `<tr style="background:#f5f5f5;font-weight:700"><td style="padding:8px;border:1px solid #ccc" colspan="5">Utilidad del Período</td><td style="padding:8px;border:1px solid #ccc;text-align:right;font-size:15px;color:${(data.resumen?.utilidad||0)>=0?'#16a34a':'#dc2626'}">${fmt(data.resumen?.utilidad)}</td></tr>`;
+      body = `<table style="width:100%;border-collapse:collapse"><tr style="background:#f5f5f5"><th style="padding:8px;border:1px solid #ccc;text-align:left">Código</th><th style="padding:8px;border:1px solid #ccc;text-align:left">Cuenta</th><th style="padding:8px;border:1px solid #ccc;text-align:left">Tipo</th><th style="padding:8px;border:1px solid #ccc;text-align:right">Debe (Q)</th><th style="padding:8px;border:1px solid #ccc;text-align:right">Haber (Q)</th><th style="padding:8px;border:1px solid #ccc;text-align:right">Saldo (Q)</th></tr>${rows}</table>`;
+    }
+
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ContaPro - ${title}</title>
+      <style>
+        @page { size: letter; margin: 1.5cm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12pt; color: #000; padding: 0; margin: 0; }
+        .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 24px; }
+        .header h1 { font-size: 18pt; margin: 0; letter-spacing: 2px; }
+        .header p { font-size: 10pt; margin: 2px 0; color: #333; }
+        .footer { margin-top: 32px; font-size: 9pt; text-align: center; color: #888; border-top: 1px solid #ccc; padding-top: 8px; }
+      </style></head><body>
+      <div class="header">
+        <h1>CONTAPRO</h1>
+        <p>Sistema de Contabilidad Profesional — Guatemala, C.A.</p>
+        <p style="font-size:13pt;font-weight:600;margin-top:12px">${title}</p>
+        <p>Período: ${monthName} ${year} — Generado el ${new Date().toLocaleDateString('es-GT')}</p>
+      </div>
+      ${body}
+      <div class="footer">ContaPro © ${cy} — Este reporte fue generado automáticamente. Documento válido para fines fiscales.</div>
+      </body></html>`);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
+  };
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -97,7 +160,7 @@ export default function ReportesFiscales() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: 24 }}>
-      <style>{printCSS}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111', margin: 0 }}>Reportes Fiscales</h2>
@@ -119,16 +182,6 @@ export default function ReportesFiscales() {
       {error && <div style={card}><p style={{ color: '#666', textAlign: 'center', padding: 40 }}>{error}</p></div>}
 
       <div ref={reportRef} className="report-content">
-        {/* Print header */}
-        <div className="print-only" style={{ textAlign: 'center', marginBottom: 30, borderBottom: '3px double #000', paddingBottom: 16 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: 1 }}>CONTAPRO</h1>
-          <p style={{ fontSize: 13, margin: '4px 0', color: '#333' }}>Sistema de Contabilidad Profesional — Guatemala, C.A.</p>
-          <p style={{ fontSize: 14, fontWeight: 600, margin: '12px 0 0' }}>
-            {tab === 'sat2237' ? 'Declaración de IVA - Formulario SAT-2237' : tab === 'cruce' ? 'Resumen Cruzado de IVA' : 'Integración de Saldos Contables'}
-          </p>
-          <p style={{ fontSize: 13, color: '#555' }}>Período: {monthName} {year}</p>
-        </div>
-
         {/* SAT-2237 */}
         {tab === 'sat2237' && data && (
           <div style={card}>
@@ -154,11 +207,6 @@ export default function ReportesFiscales() {
                 <div><p style={{ fontSize: 12, color: '#666', margin: 0 }}>Crédito Fiscal</p><p style={{ fontSize: 20, fontWeight: 700, color: '#16a34a', margin: '4px 0' }}>{fmt(data.calculo?.credito_fiscal)}</p></div>
                 <div><p style={{ fontSize: 12, color: '#666', margin: 0 }}>{data.calculo?.resultado}</p><p style={{ fontSize: 24, fontWeight: 800, color: '#0A2472', margin: '4px 0' }}>{fmt(data.calculo?.monto)}</p></div>
               </div>
-            </div>
-
-            <div className="print-only" style={{ marginTop: 40, display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ textAlign: 'center' }}><div style={{ borderTop: '1px solid #000', width: 200, margin: '0 auto', paddingTop: 8 }}>Firma del Contribuyente</div></div>
-              <div style={{ textAlign: 'center' }}><div style={{ borderTop: '1px solid #000', width: 200, margin: '0 auto', paddingTop: 8 }}>Firma del Contador</div></div>
             </div>
           </div>
         )}
@@ -236,14 +284,4 @@ const sel: React.CSSProperties = { padding: '8px 14px', borderRadius: 10, border
 const tabBtn: React.CSSProperties = { padding: '8px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.2s' };
 const actionBtn: React.CSSProperties = { padding: '8px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, color: '#475569' };
 const spinner: React.CSSProperties = { width: 36, height: 36, border: '3px solid #e2e8f0', borderTopColor: '#0A2472', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' };
-
-const printCSS = `
-@keyframes spin { to { transform: rotate(360deg); } }
-.print-only { display: none; }
-@media print {
-  .no-print { display: none !important; }
-  .print-only { display: block !important; }
-  body { font-size: 12pt; color: #000; background: #fff; }
-  @page { size: letter; margin: 1.5cm; }
-}
 `;
