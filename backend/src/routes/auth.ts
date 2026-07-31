@@ -168,4 +168,37 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+// Cambiar contraseña
+router.post('/change-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { current_password, new_password } = req.body;
+
+    if (!current_password || !new_password || new_password.length < 4) {
+      res.status(400).json({ error: 'Contraseña actual y nueva (mínimo 4 caracteres) son requeridas' });
+      return;
+    }
+
+    const userResult = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'Usuario no encontrado' });
+      return;
+    }
+
+    const valid = await bcrypt.compare(current_password, userResult.rows[0].password_hash);
+    if (!valid) {
+      res.status(400).json({ error: 'Contraseña actual incorrecta' });
+      return;
+    }
+
+    const newHash = await bcrypt.hash(new_password, 12);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, userId]);
+
+    res.json({ message: 'Contraseña actualizada exitosamente' });
+  } catch (error: any) {
+    console.error('Error cambiando contraseña:', error.message);
+    res.status(500).json({ error: 'Error al cambiar la contraseña' });
+  }
+});
+
 export default router;

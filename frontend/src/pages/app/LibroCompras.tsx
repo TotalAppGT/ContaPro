@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FileDown } from 'lucide-react';
+import { Plus, FileDown, UploadCloud } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -39,6 +39,7 @@ export default function LibroCompras() {
   const [compras, setCompras] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -50,6 +51,15 @@ export default function LibroCompras() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadMsg(`Archivo "${file.name}" seleccionado. Carga de archivos próximamente.`);
+      setTimeout(() => setUploadMsg(''), 5000);
+    }
+    e.target.value = '';
+  };
 
   const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -82,6 +92,10 @@ export default function LibroCompras() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Libro de Compras</h2>
         <div className="flex items-center gap-2">
+          <label className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 cursor-pointer">
+            <UploadCloud className="w-4 h-4" /> Cargar archivo
+            <input type="file" accept=".csv,.xlsx,.xml" onChange={handleFileUpload} className="hidden" />
+          </label>
           {compras.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleDownload}>
               <FileDown className="w-4 h-4" /> Descargar Excel
@@ -90,6 +104,10 @@ export default function LibroCompras() {
           <Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4 mr-1" /> Agregar</Button>
         </div>
       </div>
+
+      {uploadMsg && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">{uploadMsg}</div>
+      )}
 
       <div className="grid grid-cols-3 gap-4">
         <Card><CardHeader title="Total Compras" subtitle={`Q ${total.toFixed(2)}`} /></Card>

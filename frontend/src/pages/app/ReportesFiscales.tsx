@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Printer, FileDown } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const months = [
@@ -11,6 +12,22 @@ const months = [
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => ({ v: String(currentYear - i), l: String(currentYear - i) }));
 
+function downloadCSV(filename: string, headers: string[], rows: string[][]) {
+  const BOM = '\uFEFF';
+  const csv = BOM + headers.join(',') + '\n' + rows.map((r) => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function fmt(n: number): string {
+  return n.toLocaleString('es-GT', { minimumFractionDigits: 2 });
+}
+
 export default function ReportesFiscales() {
   const [tab, setTab] = useState('sat2237');
   const [month, setMonth] = useState(String(new Date().getMonth() + 1));
@@ -18,6 +35,8 @@ export default function ReportesFiscales() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
+
+  const monthLabel = months.find(m => m.v === month)?.l || '';
 
   useEffect(() => {
     fetchData();
@@ -44,6 +63,62 @@ export default function ReportesFiscales() {
     setLoading(false);
   };
 
+  const handleDownloadSAT2237 = () => {
+    if (!data) return;
+    const headers = ['Concepto', 'Monto (Q)'];
+    const rows: string[][] = [];
+    if (data.ventas) {
+      rows.push(['Total Ventas', fmt(Number(data.ventas.total || 0))]);
+      rows.push(['Base Imponible Ventas', fmt(Number(data.ventas.base_imponible || 0))]);
+      rows.push(['IVA Débito Fiscal', fmt(Number(data.ventas.iva || 0))]);
+    }
+    if (data.compras) {
+      rows.push(['Total Compras', fmt(Number(data.compras.total || 0))]);
+      rows.push(['Base Imponible Compras', fmt(Number(data.compras.base_imponible || 0))]);
+      rows.push(['IVA Crédito Fiscal', fmt(Number(data.compras.iva || 0))]);
+    }
+    if (data.calculo) {
+      rows.push(['Débito Fiscal', fmt(Number(data.calculo.debito_fiscal || 0))]);
+      rows.push(['Crédito Fiscal', fmt(Number(data.calculo.credito_fiscal || 0))]);
+      rows.push([data.calculo.resultado || 'Resultado', fmt(Number(data.calculo.monto || 0))]);
+    }
+    downloadCSV(`SAT-2237_${monthLabel}_${year}.csv`, headers, rows);
+  };
+
+  const handleDownloadCruce = () => {
+    if (!data) return;
+    const headers = ['Concepto', 'IVA Libro (Q)', 'IVA Mayor (Q)', 'Variación (Q)'];
+    const rows: string[][] = [
+      [
+        'Ventas',
+        fmt(Number(data.cruce_ventas?.iva_libro || 0)),
+        fmt(Number(data.cruce_ventas?.iva_mayor || 0)),
+        fmt(Number(data.cruce_ventas?.variacion || 0)),
+      ],
+      [
+        'Compras',
+        fmt(Number(data.cruce_compras?.iva_libro || 0)),
+        fmt(Number(data.cruce_compras?.iva_mayor || 0)),
+        fmt(Number(data.cruce_compras?.variacion || 0)),
+      ],
+    ];
+    downloadCSV(`Resumen_Cruzado_IVA_${monthLabel}_${year}.csv`, headers, rows);
+  };
+
+  const handleDownloadIntegracion = () => {
+    if (!data || !data.reporte) return;
+    const headers = ['Código', 'Cuenta', 'Tipo', 'Debe (Q)', 'Haber (Q)', 'Saldo (Q)'];
+    const rows = data.reporte.map((r: any) => [
+      `"${r.codigo || ''}"`,
+      `"${r.nombre || ''}"`,
+      `"${r.tipo || ''}"`,
+      fmt(Number(r.debe || 0)),
+      fmt(Number(r.haber || 0)),
+      fmt(Number(r.saldo || 0)),
+    ]);
+    downloadCSV(`Integracion_Saldos_${monthLabel}_${year}.csv`, headers, rows);
+  };
+
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
@@ -58,24 +133,49 @@ export default function ReportesFiscales() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-        {[
-          { key: 'sat2237', label: 'SAT-2237' },
-          { key: 'cruce', label: 'Resumen Cruzado' },
-          { key: 'integracion', label: 'Integración de Saldos' },
-        ].map(t => (
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[
+            { key: 'sat2237', label: 'SAT-2237' },
+            { key: 'cruce', label: 'Resumen Cruzado' },
+            { key: 'integracion', label: 'Integración de Saldos' },
+          ].map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
+                backgroundColor: tab === t.key ? '#0A2472' : '#f3f4f6',
+                color: tab === t.key ? '#fff' : '#666',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            style={{
-              padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
-              backgroundColor: tab === t.key ? '#0A2472' : '#f3f4f6',
-              color: tab === t.key ? '#fff' : '#666',
-            }}
+            onClick={() => window.print()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}
           >
-            {t.label}
+            <Printer size={16} /> Imprimir
           </button>
-        ))}
+          {!loading && data && tab === 'sat2237' && (
+            <button onClick={handleDownloadSAT2237} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+              <FileDown size={16} /> CSV
+            </button>
+          )}
+          {!loading && data && tab === 'cruce' && (
+            <button onClick={handleDownloadCruce} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+              <FileDown size={16} /> CSV
+            </button>
+          )}
+          {!loading && data && tab === 'integracion' && (
+            <button onClick={handleDownloadIntegracion} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', color: '#374151', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+              <FileDown size={16} /> CSV
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && (
@@ -95,7 +195,7 @@ export default function ReportesFiscales() {
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Formulario SAT-2237 — IVA Mensual</h3>
           <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px', marginBottom: '20px' }}>
-            <p><strong>Período:</strong> {months.find(m => m.v === month)?.l} {year}</p>
+            <p><strong>Período:</strong> {monthLabel} {year}</p>
             <p><strong>Régimen:</strong> {data.regimen || 'No especificado'}</p>
           </div>
           {data.ventas && (
@@ -107,9 +207,9 @@ export default function ReportesFiscales() {
                 </tr>
               </thead>
               <tbody>
-                <tr><td style={td}>Total Ventas</td><td style={tdR}>Q {Number(data.ventas.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
-                <tr><td style={td}>Base Imponible Ventas</td><td style={tdR}>Q {Number(data.ventas.base_imponible || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
-                <tr><td style={td}>IVA Débito Fiscal</td><td style={tdR}>Q {Number(data.ventas.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+                <tr><td style={td}>Total Ventas</td><td style={tdR}>Q {fmt(Number(data.ventas.total || 0))}</td></tr>
+                <tr><td style={td}>Base Imponible Ventas</td><td style={tdR}>Q {fmt(Number(data.ventas.base_imponible || 0))}</td></tr>
+                <tr><td style={td}>IVA Débito Fiscal</td><td style={tdR}>Q {fmt(Number(data.ventas.iva || 0))}</td></tr>
               </tbody>
             </table>
           )}
@@ -122,15 +222,15 @@ export default function ReportesFiscales() {
                 </tr>
               </thead>
               <tbody>
-                <tr><td style={td}>Total Compras</td><td style={tdR}>Q {Number(data.compras.total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
-                <tr><td style={td}>Base Imponible Compras</td><td style={tdR}>Q {Number(data.compras.base_imponible || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
-                <tr><td style={td}>IVA Crédito Fiscal</td><td style={tdR}>Q {Number(data.compras.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td></tr>
+                <tr><td style={td}>Total Compras</td><td style={tdR}>Q {fmt(Number(data.compras.total || 0))}</td></tr>
+                <tr><td style={td}>Base Imponible Compras</td><td style={tdR}>Q {fmt(Number(data.compras.base_imponible || 0))}</td></tr>
+                <tr><td style={td}>IVA Crédito Fiscal</td><td style={tdR}>Q {fmt(Number(data.compras.iva || 0))}</td></tr>
               </tbody>
             </table>
           )}
           {data.calculo && (
             <div style={{ background: data.calculo.resultado === 'IMPUESTO A PAGAR' ? '#fef2f2' : '#f0fdf4', borderRadius: '8px', padding: '20px', border: '2px solid ' + (data.calculo.resultado === 'IMPUESTO A PAGAR' ? '#fecaca' : '#bbf7d0') }}>
-              <p style={{ fontSize: '18px', fontWeight: 'bold' }}>{data.calculo.resultado}: Q {Number(data.calculo.monto || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p style={{ fontSize: '18px', fontWeight: 'bold' }}>{data.calculo.resultado}: Q {fmt(Number(data.calculo.monto || 0))}</p>
               <p style={{ fontSize: '13px', color: '#666', marginTop: '4px' }}>Débito: Q {data.calculo.debito_fiscal} | Crédito: Q {data.calculo.credito_fiscal}</p>
             </div>
           )}
@@ -139,22 +239,22 @@ export default function ReportesFiscales() {
 
       {!loading && !error && data && tab === 'cruce' && (
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Resumen Cruzado IVA — {months.find(m => m.v === month)?.l} {year}</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Resumen Cruzado IVA — {monthLabel} {year}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
               <h4 style={{ fontWeight: '600', marginBottom: '12px' }}>Ventas</h4>
-              <p>IVA Libro: Q {Number(data.cruce_ventas?.iva_libro || data.libroVentas?.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
-              <p>IVA Mayor: Q {Number(data.cruce_ventas?.iva_mayor || data.mayorContable?.debitoFiscal || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p>IVA Libro: Q {fmt(Number(data.cruce_ventas?.iva_libro || 0))}</p>
+              <p>IVA Mayor: Q {fmt(Number(data.cruce_ventas?.iva_mayor || 0))}</p>
               <p style={{ fontWeight: 'bold', color: Math.abs(data.cruce_ventas?.variacion || 0) > 1 ? '#dc2626' : '#16a34a' }}>
-                Variación: Q {Number(data.cruce_ventas?.variacion || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                Variación: Q {fmt(Number(data.cruce_ventas?.variacion || 0))}
               </p>
             </div>
             <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
               <h4 style={{ fontWeight: '600', marginBottom: '12px' }}>Compras</h4>
-              <p>IVA Libro: Q {Number(data.cruce_compras?.iva_libro || data.libroCompras?.iva || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
-              <p>IVA Mayor: Q {Number(data.cruce_compras?.iva_mayor || data.mayorContable?.creditoFiscal || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p>IVA Libro: Q {fmt(Number(data.cruce_compras?.iva_libro || 0))}</p>
+              <p>IVA Mayor: Q {fmt(Number(data.cruce_compras?.iva_mayor || 0))}</p>
               <p style={{ fontWeight: 'bold', color: Math.abs(data.cruce_compras?.variacion || 0) > 1 ? '#dc2626' : '#16a34a' }}>
-                Variación: Q {Number(data.cruce_compras?.variacion || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                Variación: Q {fmt(Number(data.cruce_compras?.variacion || 0))}
               </p>
             </div>
           </div>
@@ -163,7 +263,7 @@ export default function ReportesFiscales() {
 
       {!loading && !error && data && tab === 'integracion' && (
         <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', padding: '32px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Integración de Saldos — {months.find(m => m.v === month)?.l} {year}</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Integración de Saldos — {monthLabel} {year}</h3>
           {data.reporte ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -182,19 +282,19 @@ export default function ReportesFiscales() {
                     <td style={td}>{r.codigo}</td>
                     <td style={td}>{r.nombre}</td>
                     <td style={td}>{r.tipo}</td>
-                    <td style={tdR}>Q {Number(r.debe || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
-                    <td style={tdR}>Q {Number(r.haber || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
-                    <td style={{ ...tdR, fontWeight: 'bold' }}>Q {Number(r.saldo || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</td>
+                    <td style={tdR}>Q {fmt(Number(r.debe || 0))}</td>
+                    <td style={tdR}>Q {fmt(Number(r.haber || 0))}</td>
+                    <td style={{ ...tdR, fontWeight: 'bold' }}>Q {fmt(Number(r.saldo || 0))}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
             <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '20px' }}>
-              <p>Ingresos: Q {Number(data.resumen?.ingresos_total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
-              <p>Gastos: Q {Number(data.resumen?.gastos_total || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+              <p>Ingresos: Q {fmt(Number(data.resumen?.ingresos_total || 0))}</p>
+              <p>Gastos: Q {fmt(Number(data.resumen?.gastos_total || 0))}</p>
               <p style={{ fontWeight: 'bold', fontSize: '16px', color: (data.resumen?.utilidad || 0) >= 0 ? '#16a34a' : '#dc2626' }}>
-                Utilidad: Q {Number(data.resumen?.utilidad || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                Utilidad: Q {fmt(Number(data.resumen?.utilidad || 0))}
               </p>
             </div>
           )}

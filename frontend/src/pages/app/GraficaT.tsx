@@ -37,8 +37,20 @@ export default function GraficaT() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ cuentas: ChartAccount[] }>('/contabilidad/catalogo')
-      .then((data) => setAccounts(data.cuentas))
+    api.get<{ cuentas: any[] }>('/contabilidad/catalogo')
+      .then((data) => {
+        const mapped = (data.cuentas || []).map((c: any) => ({
+          id: c.id,
+          code: c.codigo,
+          name: c.nombre,
+          type: c.tipo,
+          parent_id: c.parent_id || null,
+          level: c.nivel || 1,
+          is_accept_movement: c.acepta_asientos !== false,
+          balance: c.saldo || 0,
+        }));
+        setAccounts(mapped);
+      })
       .catch(() => {
         setAccounts([
           { id: '1', code: '1.1.01', name: 'Caja', type: 'Activo', parent_id: null, level: 1, is_accept_movement: true, balance: 0 },
@@ -69,7 +81,7 @@ export default function GraficaT() {
       if (l.id !== id) return l;
       const updated = { ...l, [field]: value };
       if (field === 'account_code') {
-        const acc = accounts.find((a) => a.code === value);
+        const acc = accounts.find((a) => a.code === String(value));
         updated.account_name = acc?.name || '';
       }
       if (field === 'debit') {
@@ -90,13 +102,16 @@ export default function GraficaT() {
     setIsSubmitting(true);
     try {
       await api.post('/contabilidad/asientos', {
-        date, type: policyType, concept,
-        lines: lines.filter((l) => l.account_code).map((l) => ({
-          account_code: l.account_code,
-          concept: l.concept,
-          debit: l.debit,
-          credit: l.credit,
+        client_nit: null,
+        fecha: date,
+        lineas: lines.filter((l) => l.account_code).map((l) => ({
+          codigo: l.account_code,
+          concepto: l.concept,
+          debe: l.debit,
+          haber: l.credit,
         })),
+        tipoPoliza: policyType,
+        conceptoGeneral: concept,
       });
       toast.success('Partida registrada exitosamente');
       setConcept('');
@@ -158,15 +173,22 @@ export default function GraficaT() {
               {lines.map((line, idx) => (
                 <tr key={line.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="px-3 py-2">
-                    <input
-                      list="accounts-list"
-                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                    <select
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none bg-white"
                       value={line.account_code}
                       onChange={(e) => updateLine(line.id, 'account_code', e.target.value)}
-                      placeholder="Código"
-                    />
+                    >
+                      <option value="">-- Seleccionar --</option>
+                      {accounts.map((acc) => (
+                        <option key={acc.id} value={acc.code}>
+                          {acc.code} - {acc.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
-                  <td className="px-3 py-2 text-gray-600 text-xs">{line.account_name}</td>
+                  <td className="px-3 py-2 text-gray-600 text-xs">
+                    {line.account_code ? (accounts.find(a => a.code === line.account_code)?.name || line.account_name) : ''}
+                  </td>
                   <td className="px-3 py-2">
                     <input
                       className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
@@ -223,11 +245,6 @@ export default function GraficaT() {
               </tr>
             </tfoot>
           </table>
-          <datalist id="accounts-list">
-            {accounts.map((acc) => (
-              <option key={acc.id} value={acc.code}>{acc.code} - {acc.name}</option>
-            ))}
-          </datalist>
         </div>
 
         <div className="flex items-center justify-between mt-6">

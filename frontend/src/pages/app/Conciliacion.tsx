@@ -11,6 +11,16 @@ import { Table } from '@/components/ui/Table';
 import { api } from '@/lib/api';
 import type { BankAccount, BankTransaction } from '@/types';
 
+interface CuadreData {
+  saldo_inicial: number;
+  total_debitos: number;
+  total_creditos: number;
+  saldo_calculado: number;
+  saldo_banco: number;
+  conciliados: number;
+  pendientes: number;
+}
+
 export default function Conciliacion() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState('');
@@ -21,6 +31,16 @@ export default function Conciliacion() {
   const [dateTo, setDateTo] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [reconciling, setReconciling] = useState<Set<string>>(new Set());
+  const [cuadreData, setCuadreData] = useState<CuadreData | null>(null);
+
+  const tenantId = useMemo(() => {
+    try {
+      const t = JSON.parse(localStorage.getItem('contapro_tenant') || '{}');
+      return t.nit || t.id || '';
+    } catch {
+      return '';
+    }
+  }, []);
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -47,8 +67,34 @@ export default function Conciliacion() {
   }, []);
 
   useEffect(() => {
-    if (selectedAccount) loadTransactions();
+    if (selectedAccount) {
+      loadTransactions();
+      loadCuadre();
+    }
   }, [selectedAccount, statusFilter, dateFrom, dateTo]);
+
+  const loadCuadre = async () => {
+    try {
+      const params: Record<string, string> = { cuenta: selectedAccount };
+      if (tenantId) params.client_nit = tenantId;
+      const data = await api.get<CuadreData>('/conciliacion/cuadre', params);
+      setCuadreData(data);
+    } catch {
+      const acc = accounts.find((a) => a.id === selectedAccount);
+      const totalCredits = transactions.reduce((s, t) => s + t.credit, 0);
+      const totalDebits = transactions.reduce((s, t) => s + t.debit, 0);
+      const reconciled = transactions.filter((t) => t.is_reconciled).length;
+      setCuadreData({
+        saldo_inicial: acc?.initial_balance || 0,
+        total_debitos: totalDebits,
+        total_creditos: totalCredits,
+        saldo_calculado: (acc?.initial_balance || 0) + totalDebits - totalCredits,
+        saldo_banco: acc?.current_balance || 0,
+        conciliados: reconciled,
+        pendientes: transactions.length - reconciled,
+      });
+    }
+  };
 
   const loadTransactions = async () => {
     try {
@@ -64,7 +110,6 @@ export default function Conciliacion() {
   };
 
   const generateDummy = (id: string): BankTransaction[] => {
-    const base = id === '1' ? 50000 : 25000;
     return [
       { id: 't1', bank_account_id: id, date: '2026-07-15', description: 'Pago proveedor A', reference: 'CHQ-1001', debit: 0, credit: 15000, is_reconciled: true, reconciled_at: '2026-07-15' },
       { id: 't2', bank_account_id: id, date: '2026-07-20', description: 'Cobro cliente B', reference: 'DEP-2001', debit: 25000, credit: 0, is_reconciled: true, reconciled_at: '2026-07-20' },
@@ -89,6 +134,7 @@ export default function Conciliacion() {
       toast.success(`${reconciling.size} transacciones conciliadas`);
       setReconciling(new Set());
       loadTransactions();
+      loadCuadre();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al conciliar');
     }
@@ -108,6 +154,7 @@ export default function Conciliacion() {
       toast.success('Transacción agregada');
       setShowModal(false);
       loadTransactions();
+      loadCuadre();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al agregar');
     }
@@ -116,7 +163,16 @@ export default function Conciliacion() {
   const selectedAccountData = accounts.find((a) => a.id === selectedAccount);
   const totalCredits = transactions.reduce((s, t) => s + t.credit, 0);
   const totalDebits = transactions.reduce((s, t) => s + t.debit, 0);
-  const adminBalance = (selectedAccountData?.initial_balance || 0) + totalDebits - totalCredits;
+  const adminBalance = cuadreData
+    ? cuadreData.saldo_calculado
+    : (selectedAccountData?.initial_balance || 0) + totalDebits - totalCredits;
+
+  const reconciledCount = cuadreData
+    ? cuadreData.conciliados
+    : transactions.filter((t) => t.is_reconciled).length;
+  const pendingCount = cuadreData
+    ? cuadreData.pendientes
+    : transactions.filter((t) => !t.is_reconciled).length;
 
   const columns = [
     {
@@ -163,34 +219,66 @@ export default function Conciliacion() {
         </div>
       </div>
 
-      {/* Cuadre panel */}
+      {/* Panel de Cuadre */}
       <Card className="bg-gradient-to-br from-primary-50 to-blue-50 border-primary-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Panel de Cuadre</h3>
+
+        {/* Fórmula */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-gray-600 bg-white rounded-lg p-3">
+          <span className="font-bold text-primary-700">Fórmula:</span>
+          <span className="bg-primary-100 px-2 py-1 rounded">Saldo Inicial</span>
+          <span className="text-green-600 font-bold">+</span>
+          <span className="bg-green-100 px-2 py-1 rounded">Créditos</span>
+          <span className="text-red-600 font-bold">-</span>
+          <span className="bg-red-100 px-2 py-1 rounded">Débitos</span>
+          <span className="text-primary-700 font-bold">=</span>
+          <span className="bg-primary-100 px-2 py-1 rounded">Saldo Calculado</span>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg p-3 text-center">
             <p className="text-xs text-gray-500">Saldo Inicial</p>
-            <p className="text-lg font-bold text-gray-900">Q{(selectedAccountData?.initial_balance || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-lg font-bold text-gray-900">
+              Q{(cuadreData?.saldo_inicial ?? selectedAccountData?.initial_balance ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+            </p>
           </div>
           <div className="bg-white rounded-lg p-3 text-center">
             <p className="text-xs text-gray-500">Total Débitos</p>
-            <p className="text-lg font-bold text-green-600">Q{totalDebits.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-lg font-bold text-green-600">
+              Q{(cuadreData?.total_debitos ?? totalDebits).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+            </p>
           </div>
           <div className="bg-white rounded-lg p-3 text-center">
             <p className="text-xs text-gray-500">Total Créditos</p>
-            <p className="text-lg font-bold text-red-600">Q{totalCredits.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-lg font-bold text-red-600">
+              Q{(cuadreData?.total_creditos ?? totalCredits).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+            </p>
           </div>
           <div className="bg-white rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-500">Saldo Administrado</p>
-            <p className="text-lg font-bold text-primary-700">Q{adminBalance.toLocaleString('es-GT', { minimumFractionDigits: 2 })}</p>
+            <p className="text-xs text-gray-500">Saldo Calculado</p>
+            <p className="text-lg font-bold text-primary-700">
+              Q{adminBalance.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+            </p>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-2">
+
+        <div className="mt-4 flex flex-wrap items-center gap-4">
           <p className="text-sm text-gray-600">
-            <strong>Saldo según banco:</strong> Q{(selectedAccountData?.current_balance || 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+            <strong>Saldo según banco:</strong>{' '}
+            Q{(cuadreData?.saldo_banco ?? selectedAccountData?.current_balance ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2 })}
           </p>
-          <Badge variant={Math.abs(adminBalance - (selectedAccountData?.current_balance || 0)) < 0.01 ? 'success' : 'danger'}>
-            {Math.abs(adminBalance - (selectedAccountData?.current_balance || 0)) < 0.01 ? 'Cuadrado' : 'Descuadrado'}
+          <Badge variant={Math.abs(adminBalance - (cuadreData?.saldo_banco ?? selectedAccountData?.current_balance ?? 0)) < 0.01 ? 'success' : 'danger'}>
+            {Math.abs(adminBalance - (cuadreData?.saldo_banco ?? selectedAccountData?.current_balance ?? 0)) < 0.01 ? 'Cuadrado' : 'Descuadrado'}
           </Badge>
+
+          <div className="flex items-center gap-3 ml-auto">
+            <Badge variant="success" size="md">
+              <CheckCircle2 className="w-3 h-3" /> {reconciledCount} Conciliados
+            </Badge>
+            <Badge variant="warning" size="md">
+              {pendingCount} Pendientes
+            </Badge>
+          </div>
         </div>
       </Card>
 

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Calendar, CreditCard, Loader2 } from 'lucide-react';
+import { Shield, Calendar, CreditCard, Loader2, Moon, Sun, Key, Save } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -16,6 +18,15 @@ export default function Configuracion() {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('contapro_theme') as 'light' | 'dark') || 'light';
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     api.get<any>('/tenants')
@@ -23,6 +34,46 @@ export default function Configuracion() {
       .catch(() => setSubscription(null))
       .finally(() => setIsLoading(false));
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    localStorage.setItem('contapro_theme', next);
+    if (next === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    toast.success(`Tema ${next === 'dark' ? 'oscuro' : 'claro'} activado`);
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.current_password || !passwordForm.new_password) {
+      toast.error('Complete todos los campos');
+      return;
+    }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+    if (passwordForm.new_password.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await api.post('/auth/change-password', {
+        current_password: passwordForm.current_password,
+        new_password: passwordForm.new_password,
+      });
+      toast.success('Contraseña actualizada exitosamente');
+      setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al cambiar contraseña');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const plan = user?.plan || 'personal';
   const planLabel = plan === 'personal' ? 'Personal' : plan === 'profesional' ? 'Profesional' : 'Empresarial';
@@ -70,22 +121,55 @@ export default function Configuracion() {
         </div>
       </Card>
 
-      {/* Change password - próximamente */}
+      {/* Change password */}
       <Card>
         <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-5 h-5 text-primary-700" />
+          <Key className="w-5 h-5 text-primary-700" />
           <h3 className="text-lg font-semibold text-gray-900">Cambiar contraseña</h3>
         </div>
-        <p className="text-sm text-gray-500">Cambiar contraseña próximamente.</p>
+        <div className="space-y-3 max-w-md">
+          <Input
+            label="Contraseña actual"
+            type="password"
+            value={passwordForm.current_password}
+            onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+            placeholder="Ingrese su contraseña actual"
+          />
+          <Input
+            label="Nueva contraseña"
+            type="password"
+            value={passwordForm.new_password}
+            onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+            placeholder="Mínimo 6 caracteres"
+          />
+          <Input
+            label="Confirmar nueva contraseña"
+            type="password"
+            value={passwordForm.confirm_password}
+            onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+            placeholder="Repita la nueva contraseña"
+          />
+          <Button onClick={handleChangePassword} isLoading={isChangingPassword}>
+            <Save className="w-4 h-4" /> Actualizar contraseña
+          </Button>
+        </div>
       </Card>
 
-      {/* Theme (placeholder) */}
+      {/* Theme toggle */}
       <Card>
-        <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-5 h-5 text-primary-700" />
-          <h3 className="text-lg font-semibold text-gray-900">Apariencia</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {theme === 'light' ? <Sun className="w-5 h-5 text-primary-700" /> : <Moon className="w-5 h-5 text-primary-700" />}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Apariencia</h3>
+              <p className="text-sm text-gray-500">Tema actual: {theme === 'light' ? 'Claro' : 'Oscuro'}</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={toggleTheme}>
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            <span className="ml-1">{theme === 'light' ? 'Modo oscuro' : 'Modo claro'}</span>
+          </Button>
         </div>
-        <p className="text-sm text-gray-500">Personalización de tema disponible próximamente.</p>
       </Card>
     </div>
   );
