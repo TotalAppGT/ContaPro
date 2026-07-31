@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Calendar, CreditCard, Loader2, Moon, Sun, Key, Save } from 'lucide-react';
+import { Shield, Calendar, CreditCard, Loader2, Moon, Sun, Key, Save, Bell, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 
@@ -27,6 +26,8 @@ export default function Configuracion() {
     confirm_password: '',
   });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [telefono, setTelefono] = useState('');
+  const [prefs, setPrefs] = useState<any>({});
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -41,6 +42,7 @@ export default function Configuracion() {
       .then((data) => setSubscription(data.tenant || data))
       .catch(() => setSubscription(null))
       .finally(() => setIsLoading(false));
+    api.get<any>('/notificaciones/preferencias').then(d => { setPrefs(d); setTelefono(d.telefono || ''); }).catch(() => {});
   }, []);
 
   const toggleTheme = () => {
@@ -55,7 +57,12 @@ export default function Configuracion() {
     toast.success(`Tema ${next === 'dark' ? 'oscuro' : 'claro'} activado`);
   };
 
-  const handleChangePassword = async () => {
+  const handleSavePhone = async () => {
+    try {
+      await api.post('/notificaciones/telefono', { telefono });
+      toast.success('Teléfono guardado para notificaciones');
+    } catch { toast.error('Error al guardar'); }
+  };
     if (!passwordForm.current_password || !passwordForm.new_password) {
       toast.error('Complete todos los campos');
       return;
@@ -161,6 +168,38 @@ export default function Configuracion() {
             <Save className="w-4 h-4" /> Actualizar contraseña
           </Button>
         </div>
+      </Card>
+
+      {/* Notificaciones */}
+      <Card>
+        <div className="flex items-center gap-3 mb-4">
+          <Bell className="w-5 h-5 text-primary-700" />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
+            <p className="text-sm text-gray-500">
+              {prefs.tipo === 'whatsapp' ? 'Alertas por WhatsApp activas (Plan Empresarial)' :
+               prefs.tipo === 'email' ? 'Notificaciones por email activas (Plan Profesional)' :
+               'Actualice a Plan Profesional o Empresarial para recibir alertas'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-end gap-3 max-w-md">
+          <Input
+            label="Teléfono WhatsApp (solo Plan Empresarial)"
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            placeholder="+502 XXXX-XXXX"
+          />
+          <Button onClick={handleSavePhone} size="sm">
+            <Save className="w-4 h-4" /> Guardar
+          </Button>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          {plan === 'empresarial' ? '📱 Recibirás alertas de IVA, vencimientos y más por WhatsApp.' :
+           plan === 'profesional' ? '📧 Recibirás notificaciones por correo electrónico.' :
+           '🔒 Disponible en planes Profesional y Empresarial.'}
+        </p>
       </Card>
 
       {/* Theme toggle */}

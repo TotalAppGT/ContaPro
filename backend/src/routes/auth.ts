@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authMiddleware } from '../middleware/auth';
 import { seedChartOfAccounts } from '../services/seedService';
+import { enviarEmail, emailBienvenida } from '../services/emailService';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
@@ -74,6 +75,10 @@ router.post('/register', async (req: Request, res: Response) => {
     await seedChartOfAccounts(tenant.id);
 
     const token = generateToken(user);
+
+    // Email de bienvenida
+    const html = emailBienvenida(name, email, password, subdomain);
+    enviarEmail(email, '¡Bienvenido a ContaPro!', html);
 
     res.status(201).json({
       message: 'Cuenta creada exitosamente',

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import bcrypt from 'bcryptjs';
+import { enviarEmail, emailInvitacion } from '../services/emailService';
 
 const router = Router();
 
@@ -59,6 +60,13 @@ router.post('/', async (req: Request, res: Response) => {
     );
 
     res.status(201).json({ usuario: result.rows[0], message: 'Usuario creado exitosamente' });
+
+    // Enviar email de invitación
+    const tenant = await pool.query('SELECT nombre, subdomain FROM tenants WHERE id = $1', [tenantId]);
+    if (tenant.rows.length > 0) {
+      const html = emailInvitacion(nombre, email, password, tenant.rows[0].nombre, tenant.rows[0].subdomain);
+      enviarEmail(email, `ContaPro - Te han invitado a ${tenant.rows[0].nombre}`, html);
+    }
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
