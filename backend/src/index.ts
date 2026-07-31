@@ -20,31 +20,29 @@ import pool from './db/pool';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
-
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-
-const PUBLIC_ROUTES = [
-  { method: 'POST', path: '/api/auth/login' },
-  { method: 'POST', path: '/api/auth/register' },
-  { method: 'GET', path: '/api/subscriptions/plans' },
-  { method: 'POST', path: '/api/subscriptions/webhook' },
-  { method: 'GET', path: '/api/health' },
-];
-
 app.use(tenantResolver);
 
-app.use((req, res, next) => {
-  const isPublic = PUBLIC_ROUTES.some(
-    r => r.method === req.method && req.path.startsWith(r.path)
-  );
+// --- Rutas públicas (sin auth) ---
 
-  if (isPublic) return next();
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    service: 'ContaPro API',
+    version: '1.0.0',
+  });
+});
 
+// --- Rutas API (con auth selectivo) ---
+
+const PUBLIC_API = ['/api/auth/login', '/api/auth/register', '/api/subscriptions/plans', '/api/subscriptions/webhook'];
+app.use('/api', (req, res, next) => {
+  if (PUBLIC_API.some(p => p === req.path || (req.path.startsWith(p) && p.includes('webhook')))) {
+    return next();
+  }
   authMiddleware(req, res, next);
 });
 
@@ -56,37 +54,24 @@ app.use('/api/sat', satRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.get('/api/health', (req, res) => {
-  const tenantInfo = req.tenant
-    ? { tenant_id: req.tenant.id, tenant_name: req.tenant.nombre }
-    : null;
+// --- Frontend estático (sin auth) ---
 
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'ContaPro API',
-    version: '1.0.0',
-    tenant: tenantInfo,
-  });
-});
-
-// Servir frontend estático
 const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
 app.use(express.static(frontendPath));
 
-// SPA fallback: todas las rutas no-API → index.html
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    const file = path.join(frontendPath, 'index.html');
+    if (fs.existsSync(file)) res.sendFile(file);
+    else res.status(200).send('ContaPro - Frontend no compilado. Ejecuta: cd frontend && npm run build');
   }
 });
 
+// --- Error handler ---
+
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error no manejado:', err);
-  res.status(500).json({
-    error: 'Error interno del servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
-  });
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Error interno del servidor' });
 });
 
 async function startup() {
@@ -98,12 +83,11 @@ async function startup() {
       console.log('Schema aplicado correctamente.');
     }
   } catch (e: any) {
-    console.error('Error aplicando schema:', e.message);
+    console.error('Error schema:', e.message);
   }
 
   app.listen(PORT, async () => {
-    console.log(`ContaPro API corriendo en puerto ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(`ContaPro corriendo en puerto ${PORT}`);
     await seedMasterTenant();
   });
 }
