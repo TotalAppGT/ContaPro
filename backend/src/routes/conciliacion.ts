@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/auth';
 const router = Router();
 router.use(authMiddleware);
 
-router.get('/conciliacion/cuentas', async (req: Request, res: Response) => {
+router.get('/cuentas', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit } = req.query;
@@ -29,7 +29,7 @@ router.get('/conciliacion/cuentas', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/conciliacion/cuentas', async (req: Request, res: Response) => {
+router.post('/cuentas', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, banco, numero_cuenta, tipo_cuenta, moneda, saldo_inicial } = req.body;
@@ -57,7 +57,7 @@ router.post('/conciliacion/cuentas', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/conciliacion/transacciones', async (req: Request, res: Response) => {
+router.get('/transacciones', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { cuenta, fechaInicio, fechaFin, conciliado, client_nit } = req.query;
@@ -97,7 +97,7 @@ router.get('/conciliacion/transacciones', async (req: Request, res: Response) =>
   }
 });
 
-router.post('/conciliacion/transacciones', async (req: Request, res: Response) => {
+router.post('/transacciones', async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const tenantId = req.user!.tenantId;
@@ -153,7 +153,7 @@ router.post('/conciliacion/transacciones', async (req: Request, res: Response) =
   }
 });
 
-router.patch('/conciliacion/transacciones/:id', async (req: Request, res: Response) => {
+router.patch('/transacciones/:id', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { id } = req.params;
@@ -185,7 +185,7 @@ router.patch('/conciliacion/transacciones/:id', async (req: Request, res: Respon
   }
 });
 
-router.get('/conciliacion/cuadre', async (req: Request, res: Response) => {
+router.get('/cuadre', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { cuenta, fechaInicio, fechaFin, client_nit } = req.query;

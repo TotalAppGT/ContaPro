@@ -20,7 +20,7 @@ interface AsientoInput {
   conceptoGeneral?: string;
 }
 
-router.get('/contabilidad/catalogo', async (req: Request, res: Response) => {
+router.get('/catalogo', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const result = await pool.query(
@@ -37,7 +37,7 @@ router.get('/contabilidad/catalogo', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/contabilidad/asientos', async (req: Request, res: Response) => {
+router.post('/asientos', async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const tenantId = req.user!.tenantId;
@@ -120,7 +120,7 @@ router.post('/contabilidad/asientos', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/contabilidad/asientos', async (req: Request, res: Response) => {
+router.get('/asientos', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, mes, anio } = req.query;
@@ -173,7 +173,7 @@ router.get('/contabilidad/asientos', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/contabilidad/reporte-financiero', async (req: Request, res: Response) => {
+router.get('/reporte-financiero', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, mes, anio } = req.query;
@@ -290,7 +290,7 @@ router.get('/contabilidad/reporte-financiero', async (req: Request, res: Respons
   }
 });
 
-router.post('/contabilidad/cotejar', async (req: Request, res: Response) => {
+router.post('/cotejar', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, mes, anio } = req.body;
@@ -381,7 +381,7 @@ router.post('/contabilidad/cotejar', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/contabilidad/comparativa-mensual', async (req: Request, res: Response) => {
+router.get('/comparativa-mensual', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, anio } = req.query;

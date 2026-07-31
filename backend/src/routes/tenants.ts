@@ -8,7 +8,7 @@ const router = Router();
 router.use(authMiddleware);
 router.use(requireRole('owner'));
 
-router.get('/tenants', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     if (req.user!.rol !== 'admin') {
       const result = await pool.query(
@@ -35,7 +35,7 @@ router.get('/tenants', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/tenants/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -65,7 +65,7 @@ router.get('/tenants/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/tenants/:id', async (req: Request, res: Response) => {
+router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { nombre, direccion, telefono, colegiado, firma_nombre, logo_base64 } = req.body;
@@ -106,7 +106,7 @@ router.patch('/tenants/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/tenants/:id/estado', async (req: Request, res: Response) => {
+router.patch('/:id/estado', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { estado } = req.body;
@@ -133,7 +133,7 @@ router.patch('/tenants/:id/estado', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/tenants/:id', async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM tenants WHERE id = $1 RETURNING id, nombre', [id]);

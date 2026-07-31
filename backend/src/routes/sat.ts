@@ -73,7 +73,7 @@ function agruparDocumentos(documentos: SATDocument[], agrupacion: Agrupacion): S
   return Array.from(grupos.values());
 }
 
-router.post('/sat/carga-masiva', async (req: Request, res: Response) => {
+router.post('/carga-masiva', async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const tenantId = req.user!.tenantId;
@@ -194,7 +194,7 @@ router.post('/sat/carga-masiva', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/sat/sat2237', async (req: Request, res: Response) => {
+router.get('/sat2237', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, mes, anio } = req.query;
@@ -299,7 +299,7 @@ router.get('/sat/sat2237', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/sat/resumen-cruce', async (req: Request, res: Response) => {
+router.get('/resumen-cruce', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, mes, anio } = req.query;
@@ -381,7 +381,7 @@ router.get('/sat/resumen-cruce', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/sat/dashboard-fiscal', async (req: Request, res: Response) => {
+router.get('/dashboard-fiscal', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { client_nit, mes, anio } = req.query;

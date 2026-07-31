@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
 router.use(authMiddleware);
 router.use(requireRole('owner'));
 
-router.get('/admin/dashboard', async (req: Request, res: Response) => {
+router.get('/dashboard', async (req: Request, res: Response) => {
   try {
     const [totalTenants, activeTenants, mrrResult, newThisMonth, totalUsers] = await Promise.all([
       pool.query('SELECT COUNT(*) as count FROM tenants'),
@@ -46,7 +46,7 @@ router.get('/admin/dashboard', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/admin/tenants/:id/switch', async (req: Request, res: Response) => {
+router.get('/tenants/:id/switch', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

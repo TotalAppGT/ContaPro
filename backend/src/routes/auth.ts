@@ -22,7 +22,7 @@ function generateToken(user: {
   );
 }
 
-router.post('/auth/register', async (req: Request, res: Response) => {
+router.post('/register', async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const { name, nit, email, password, subdomain, plan } = req.body;
@@ -83,7 +83,7 @@ router.post('/auth/register', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/auth/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -134,7 +134,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/auth/me', authMiddleware, async (req: Request, res: Response) => {
+router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userResult = await pool.query(
       `SELECT u.id, u.email, u.nombre, u.rol,

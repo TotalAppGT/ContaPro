@@ -34,11 +34,11 @@ const PLANS = [
   },
 ];
 
-router.get('/subscriptions/plans', (req: Request, res: Response) => {
+router.get('/plans', (req: Request, res: Response) => {
   res.json({ planes: PLANS });
 });
 
-router.post('/subscriptions/create-checkout', authMiddleware, async (req: Request, res: Response) => {
+router.post('/create-checkout', authMiddleware, async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { plan } = req.body;
@@ -73,7 +73,7 @@ router.post('/subscriptions/create-checkout', authMiddleware, async (req: Reques
   }
 });
 
-router.post('/subscriptions/webhook', async (req: Request, res: Response) => {
+router.post('/webhook', async (req: Request, res: Response) => {
   try {
     const { subscription_id, status } = req.body;
 
@@ -116,7 +116,7 @@ router.post('/subscriptions/webhook', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/subscriptions/current', authMiddleware, async (req: Request, res: Response) => {
+router.get('/current', authMiddleware, async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
 
