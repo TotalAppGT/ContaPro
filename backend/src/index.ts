@@ -38,7 +38,7 @@ app.get('/api/health', (req, res) => {
 
 // --- Rutas API (con auth selectivo) ---
 
-const PUBLIC_API = ['/api/auth/login', '/api/auth/register', '/api/subscriptions/plans', '/api/subscriptions/webhook'];
+const PUBLIC_API = ['/auth/login', '/auth/register', '/subscriptions/plans', '/subscriptions/webhook'];
 app.use('/api', (req, res, next) => {
   if (PUBLIC_API.some(p => p === req.path || (req.path.startsWith(p) && p.includes('webhook')))) {
     return next();
