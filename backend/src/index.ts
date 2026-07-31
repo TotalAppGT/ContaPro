@@ -12,6 +12,8 @@ import conciliacionRoutes from './routes/conciliacion';
 import satRoutes from './routes/sat';
 import subscriptionsRoutes from './routes/subscriptions';
 import adminRoutes from './routes/admin';
+import ventasRoutes from './routes/ventas';
+import comprasRoutes from './routes/compras';
 import { seedMasterTenant } from './services/seedMaster';
 import fs from 'fs';
 import path from 'path';
@@ -53,6 +55,8 @@ app.use('/api/conciliacion', conciliacionRoutes);
 app.use('/api/sat', satRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ventas', ventasRoutes);
+app.use('/api/compras', comprasRoutes);
 
 // --- Frontend estático (sin auth) ---
 

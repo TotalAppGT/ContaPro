@@ -150,4 +150,23 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Subir logo (base64)
+router.post('/logo', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { logo } = req.body;
+
+    if (!logo) {
+      res.status(400).json({ error: 'Se requiere el logo en base64' });
+      return;
+    }
+
+    await pool.query('UPDATE tenants SET logo_base64 = $1, updated_at = NOW() WHERE id = $2', [logo, tenantId]);
+    res.json({ message: 'Logo actualizado exitosamente' });
+  } catch (error: any) {
+    console.error('Error subiendo logo:', error.message);
+    res.status(500).json({ error: 'Error al actualizar el logo' });
+  }
+});
+
 export default router;
