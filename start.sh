@@ -1,11 +1,17 @@
 #!/bin/bash
 set -e
 echo "=== ContaPro Deploy ==="
+
 echo "Instalando frontend..."
-cd frontend && npm install
+cd /app/frontend
+npm install --include=dev
+
 echo "Compilando frontend..."
-npm run build
+npx vite build
+
 echo "Instalando backend..."
-cd ../backend && npm install
+cd /app/backend
+npm install
+
 echo "Iniciando servidor..."
-npm start
+npx tsx src/index.ts
