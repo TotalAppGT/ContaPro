@@ -63,7 +63,8 @@ export default function Configuracion() {
       toast.success('Teléfono guardado para notificaciones');
     } catch { toast.error('Error al guardar'); }
   };
-    if (!passwordForm.current_password || !passwordForm.new_password) {
+
+  const handleChangePassword = async () => {
       toast.error('Complete todos los campos');
       return;
     }
