@@ -5,7 +5,7 @@ import pool from './pool';
 async function migrate() {
   const client = await pool.connect();
   try {
-    const schemaPath = path.join(__dirname, 'schema.sql');
+    const schemaPath = path.join(__dirname, '..', '..', '..', 'database', 'schema.sql');
     const sql = fs.readFileSync(schemaPath, 'utf-8');
 
     console.log('Ejecutando migración...');
