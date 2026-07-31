@@ -33,6 +33,7 @@ const PUBLIC_ROUTES = [
   { method: 'POST', path: '/api/auth/register' },
   { method: 'GET', path: '/api/subscriptions/plans' },
   { method: 'POST', path: '/api/subscriptions/webhook' },
+  { method: 'GET', path: '/api/health' },
 ];
 
 app.use(tenantResolver);
@@ -42,13 +43,7 @@ app.use((req, res, next) => {
     r => r.method === req.method && req.path.startsWith(r.path)
   );
 
-  if (isPublic) {
-    return next();
-  }
-
-  if (req.method === 'GET' && req.path === '/api/health') {
-    return next();
-  }
+  if (isPublic) return next();
 
   authMiddleware(req, res, next);
 });
