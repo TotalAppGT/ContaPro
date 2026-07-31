@@ -32,6 +32,21 @@
   }
 }
 
+@media print {
+  html, body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  @page { size: letter; margin: 1.5cm 1.2cm; }
+  aside, nav, header, .no-print, button:not(.keep-print),
+  [class*="fixed"], [class*="sticky"], [class*="sidebar"],
+  .flex-shrink-0, .lg\\:flex { display: none !important; }
+  .report-content { position: static !important; width: 100% !important; margin: 0 !important; padding: 0 !important; visibility: visible !important; }
+  .report-content * { visibility: visible !important; color: #000 !important; }
+  .print-only { display: block !important; }
+  table { width: 100% !important; border-collapse: collapse !important; page-break-inside: avoid; }
+  th { background: #f3f4f6 !important; color: #000 !important; font-weight: 700; }
+  td, th { border: 1px solid #ccc !important; padding: 6px 8px !important; }
+  h1, h2, h3 { color: #000 !important; }
+}
+
 .dark body { background: #0f172a; color: #e2e8f0; }
 .dark .bg-white { background: #1e293b !important; }
 .dark .text-gray-900 { color: #e2e8f0 !important; }
