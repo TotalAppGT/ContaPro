@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
+import { createRecurrenteCheckout, verifyRecurrenteWebhook } from '../services/recurrente';
 
 const router = Router();
+
+const BASE_URL = process.env.BASE_URL || 'https://contapro-production.up.railway.app';
 
 const PLANS = [
   {
@@ -49,15 +52,8 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
       return;
     }
 
-    const pendingResult = await pool.query(
-      'SELECT id FROM subscriptions WHERE tenant_id = $1 AND estado = $2',
-      [tenantId, 'pendiente']
-    );
-
-    if (pendingResult.rows.length > 0) {
-      res.json({ message: 'Ya existe un pago pendiente', subscription: pendingResult.rows[0] });
-      return;
-    }
+    const tenantResult = await pool.query('SELECT email FROM tenants WHERE id = $1', [tenantId]);
+    const tenantEmail = tenantResult.rows[0]?.email || '';
 
     const result = await pool.query(
       `INSERT INTO subscriptions (tenant_id, plan, estado, monto, periodo_inicio, periodo_fin)
@@ -65,54 +61,98 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
        RETURNING *`,
       [tenantId, plan, planInfo.precio]
     );
+    const sub = result.rows[0];
 
-    res.status(201).json({ message: 'Suscripción creada. Proceda al pago.', subscription: result.rows[0] });
+    const checkoutUrl = await createRecurrenteCheckout({
+      tenant_id: tenantId,
+      subscription_id: sub.id,
+      plan_name: planInfo.nombre,
+      amount: planInfo.precio,
+      currency: 'GTQ',
+      email: tenantEmail,
+      success_url: `${BASE_URL}/app/configuracion?pago=exitoso`,
+      cancel_url: `${BASE_URL}/app/configuracion?pago=cancelado`,
+    });
+
+    res.status(201).json({
+      message: 'Redirigiendo a Recurrente para completar el pago.',
+      checkout_url: checkoutUrl,
+      subscription: sub,
+    });
   } catch (error: any) {
     console.error('Error creando checkout:', error.message);
-    res.status(500).json({ error: 'Error al crear la suscripción' });
+    res.status(500).json({ error: error.message || 'Error al crear suscripción' });
   }
 });
 
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
-    const { subscription_id, status } = req.body;
+    const signature = req.headers['x-recurrente-signature'] as string || '';
+    const { subscription_id, status, metadata } = req.body;
 
-    if (!subscription_id || !status) {
-      res.status(400).json({ error: 'Datos de webhook incompletos' });
+    if (!verifyRecurrenteWebhook(req.body, signature)) {
+      res.status(403).json({ error: 'Firma inválida' });
       return;
     }
 
-    if (status === 'completed' || status === 'paid') {
-      const result = await pool.query(
-        `UPDATE subscriptions
-         SET estado = 'activo', periodo_inicio = NOW(), periodo_fin = NOW() + INTERVAL '30 days'
-         WHERE id = $1 RETURNING *`,
-        [subscription_id]
-      );
-
-      if (result.rows.length === 0) {
-        res.status(404).json({ error: 'Suscripción no encontrada' });
-        return;
-      }
-
-      await pool.query(
-        'UPDATE tenants SET estado = $1, plan = $2, updated_at = NOW() WHERE id = $3',
-        ['activo', result.rows[0].plan, result.rows[0].tenant_id]
-      );
-
-      res.json({ message: 'Pago confirmado, suscripción activada', subscription: result.rows[0] });
-    } else if (status === 'failed' || status === 'cancelled') {
-      await pool.query(
-        'UPDATE subscriptions SET estado = $1 WHERE id = $2',
-        ['cancelado', subscription_id]
-      );
-      res.json({ message: 'Pago cancelado o fallido' });
-    } else {
-      res.json({ message: 'Estado de webhook recibido', status });
+    const subId = subscription_id || metadata?.subscription_id;
+    if (!subId) {
+      res.status(400).json({ error: 'subscription_id requerido' });
+      return;
     }
+
+    if (status === 'completed' || status === 'paid' || status === 'succeeded') {
+      const result = await pool.query(
+        `UPDATE subscriptions SET estado = 'activo', periodo_inicio = NOW(), periodo_fin = NOW() + INTERVAL '30 days'
+         WHERE id = $1 RETURNING *`,
+        [subId]
+      );
+
+      if (result.rows.length > 0) {
+        await pool.query(
+          'UPDATE tenants SET estado = $1, plan = $2, updated_at = NOW() WHERE id = $3',
+          ['activo', result.rows[0].plan, result.rows[0].tenant_id]
+        );
+      }
+    } else if (status === 'failed' || status === 'cancelled') {
+      await pool.query("UPDATE subscriptions SET estado = 'cancelado' WHERE id = $1", [subId]);
+    }
+
+    res.json({ received: true });
   } catch (error: any) {
-    console.error('Error en webhook:', error.message);
+    console.error('Error webhook:', error.message);
     res.status(500).json({ error: 'Error procesando webhook' });
+  }
+});
+
+// Simulación de pago para desarrollo (sin Recurrente)
+router.get('/simulate-payment', async (req: Request, res: Response) => {
+  try {
+    const { sub_id } = req.query;
+    if (!sub_id) {
+      res.status(400).json({ error: 'sub_id requerido' });
+      return;
+    }
+
+    const result = await pool.query(
+      `UPDATE subscriptions SET estado = 'activo', periodo_inicio = NOW(), periodo_fin = NOW() + INTERVAL '30 days'
+       WHERE id = $1 RETURNING *`,
+      [sub_id]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Suscripción no encontrada' });
+      return;
+    }
+
+    await pool.query(
+      'UPDATE tenants SET estado = $1, plan = $2, updated_at = NOW() WHERE id = $3',
+      ['activo', result.rows[0].plan, result.rows[0].tenant_id]
+    );
+
+    res.json({ message: 'Pago simulado exitosamente', subscription: result.rows[0] });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Error simulando pago' });
   }
 });
 
