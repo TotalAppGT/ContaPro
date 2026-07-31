@@ -70,6 +70,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Servir frontend estático
+const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(frontendPath));
+
+// SPA fallback: todas las rutas no-API → index.html
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api/')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  }
+});
+
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error no manejado:', err);
   res.status(500).json({

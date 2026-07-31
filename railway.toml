@@ -1,12 +1,14 @@
-# Railway deployment configuration for ContaPro
+# Railway deployment - ContaPro
+# Build: install deps + build frontend
+# Start: install backend deps + start server (serves frontend + API)
 
 [build]
   builder = "nixpacks"
 
 [deploy]
-  startCommand = "cd backend && npm install && npm start"
+  startCommand = "cd frontend && npm install && npm run build && cd ../backend && npm install && npm start"
 
-# Railway auto-injects DATABASE_URL when you add PostgreSQL
-# Add in Railway dashboard → service → Variables:
-#   JWT_SECRET = your-secret-key  
+# Railway auto-injects DATABASE_URL
+# Add in Railway Variables:
+#   JWT_SECRET = your-secret
 #   BASE_DOMAIN = totalappgt.online
