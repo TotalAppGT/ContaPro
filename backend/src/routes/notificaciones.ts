@@ -31,12 +31,19 @@ router.post('/telefono', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const { telefono } = req.body;
+    if (!telefono) { res.status(400).json({ error: 'Teléfono requerido' }); return; }
 
-    await pool.query(
-      'UPDATE tenants SET telefono = $1, updated_at = NOW() WHERE id = $2',
-      [telefono, tenantId]
+    const result = await pool.query(
+      'UPDATE tenants SET telefono = $1, updated_at = NOW() WHERE id = $2 RETURNING telefono',
+      [String(telefono).replace(/\D/g, ''), tenantId]
     );
-    res.json({ message: 'Teléfono guardado. Recibirás alertas por WhatsApp.' });
+    
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: 'Tenant no encontrado' });
+      return;
+    }
+    
+    res.json({ message: 'Teléfono guardado: ' + result.rows[0].telefono });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -56,7 +63,7 @@ router.post('/test', async (req: Request, res: Response) => {
 
     const enviado = await enviarWhatsApp(
       t.telefono,
-      `✅ *ContaPro - Mensaje de prueba*\n\nHola ${t.nombre || ''}, tus notificaciones de WhatsApp están configuradas correctamente.\n\nRecibirás alertas de:\n📊 IVA por pagar\n⚠️ Vencimientos de suscripción\n📋 Recordatorios contables\n\n— ContaPro Guatemala`
+      `*ContaPro - Mensaje de Prueba*\n\nHola ${t.nombre || ''}, sus notificaciones de WhatsApp estan configuradas correctamente.\n\nRecibira alertas de:\n- Vencimientos de IVA\n- Fechas limite de declaracion\n- Renovacion de suscripcion\n\n*ContaPro Guatemala*`
     );
 
     if (enviado.ok) {

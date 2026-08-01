@@ -36,11 +36,11 @@ export async function enviarWhatsApp(telefono: string, mensaje: string): Promise
 }
 
 export async function enviarAlertaIVA(telefono: string, periodo: string, monto: number): Promise<void> {
-  const msg = `📊 *ContaPro - Alerta Fiscal*\n\nIVA del período *${periodo}*: *Q${monto.toFixed(2)}*\n\nPresenta tu declaración SAT-2237 a tiempo.\n\n— ContaPro Guatemala`;
+  const msg = `*ContaPro - Alerta Fiscal*\n\nIVA del periodo ${periodo}: *Q${monto.toFixed(2)}*\n\nPresente su declaracion SAT-2237 a tiempo.\n\n*ContaPro Guatemala*`;
   await enviarWhatsApp(telefono, msg);
 }
 
 export async function enviarAlertaVencimiento(telefono: string, plan: string, dias: number): Promise<void> {
-  const msg = `⚠️ *ContaPro - Suscripción*\n\nTu plan *${plan}* vence en *${dias} días*.\n\nRenueva para mantener el acceso.\n\n— ContaPro Guatemala`;
+  const msg = `*ContaPro - Suscripcion*\n\nSu plan ${plan} vence en ${dias} dias.\n\nRenueve para mantener el acceso a todos los modulos.\n\n*ContaPro Guatemala*`;
   await enviarWhatsApp(telefono, msg);
 }
