@@ -40,7 +40,14 @@ router.post('/test', async (req: Request, res: Response) => {
     if (enviado) {
       res.json({ message: `Mensaje de prueba enviado a ${t.telefono}` });
     } else {
-      res.status(500).json({ error: 'Error al enviar. Verifique el token de WhatsApp.' });
+      res.status(500).json({ 
+        error: 'Error al enviar. Verifique el token de WhatsApp.',
+        debug: {
+          phoneId: process.env.WHATSAPP_PHONE_ID ? 'Configurado (' + process.env.WHATSAPP_PHONE_ID.substring(0,6) + '...)' : 'NO CONFIGURADO',
+          token: process.env.WHATSAPP_TOKEN ? 'Configurado (' + process.env.WHATSAPP_TOKEN.substring(0,10) + '...)' : 'NO CONFIGURADO',
+          telefono: t.telefono,
+        }
+      });
     }
   } catch (e: any) {
     res.status(500).json({ error: e.message });
