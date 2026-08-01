@@ -9,9 +9,11 @@ import type { PlanType } from '@/types';
 
 const plans: { name: PlanType; label: string; price: number; features: string[] }[] = [
   { name: 'personal', label: 'Personal', price: 79, features: ['1 empresa', 'Ventas y compras', 'Reportes IVA', 'Soporte email'] },
-  { name: 'profesional', label: 'Profesional', price: 199, features: ['Contabilidades ilimitadas', '3 usuarios', 'Gráfica T', 'Conciliación', 'SAT Masivo', 'Reportes fiscales', 'Subdominio propio'] },
+  { name: 'profesional', label: 'Profesional', price: 199, features: ['Contabilidades ilimitadas', '3 usuarios', 'Grafica T', 'Conciliacion', 'SAT Masivo', 'Reportes fiscales', 'Subdominio propio'] },
   { name: 'empresarial', label: 'Empresarial', price: 399, features: ['10 usuarios', 'Dominio .com.gt propio', 'API acceso', 'WhatsApp alertas', 'Soporte prioritario', 'Todo lo del plan Profesional'] },
 ];
+
+const planLabels: Record<string, string> = { personal: 'Personal', profesional: 'Profesional', empresarial: 'Empresarial' };
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -29,8 +31,10 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await register({ name, nit, email, password, subdomain, plan });
-      toast.success('Cuenta creada exitosamente. ¡Bienvenido!');
+      const finalSubdomain = plan === 'personal' 
+        ? name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') + Math.random().toString(36).substring(2, 6)
+        : subdomain;
+      await register({ name, nit, email, password, subdomain: finalSubdomain, plan });
       navigate('/login');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al crear la cuenta');
@@ -102,13 +106,18 @@ export default function RegisterPage() {
 
           {step === 2 && (
             <form onSubmit={(e) => { e.preventDefault(); setStep(3); }} className="space-y-4">
-              <Input label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} placeholder="Juan Pérez" required />
+              <Input label="Nombre completo" value={name} onChange={(e) => setName(e.target.value)} placeholder="Juan Perez" required />
               <Input label="NIT" value={nit} onChange={(e) => setNit(e.target.value)} placeholder="1234567-8" required />
-              <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" required />
-              <Input label="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" required />
-              <Input label="Subdominio" value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="miempresa.contapro.com.gt" hint="Será su dirección de acceso" required />
+              <Input label="Correo electronico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" required />
+              <Input label="Contrasena" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimo 8 caracteres" required />
+              {plan !== 'personal' && (
+                <Input label="Subdominio" value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="midespacho" hint={"Sera su direccion: midespacho.totalappgt.online"} required />
+              )}
+              {plan === 'personal' && (
+                <p className="text-sm text-gray-500 bg-blue-50 border border-blue-100 rounded-lg p-3">Plan Personal: accedera desde <strong>app.totalappgt.online</strong> con su correo y contrasena.</p>
+              )}
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atras</Button>
                 <Button type="submit" className="flex-1">Continuar</Button>
               </div>
             </form>
@@ -119,11 +128,11 @@ export default function RegisterPage() {
               <div className="bg-gray-50 rounded-xl p-6 space-y-3">
                 <h3 className="font-semibold text-gray-900">Resumen del registro</h3>
                 <div className="text-sm space-y-1">
-                  <p><span className="text-gray-500">Plan:</span> <strong>{plan.charAt(0).toUpperCase() + plan.slice(1)}</strong></p>
+                  <p><span className="text-gray-500">Plan:</span> <strong>{planLabels[plan] || plan}</strong></p>
                   <p><span className="text-gray-500">Nombre:</span> <strong>{name}</strong></p>
                   <p><span className="text-gray-500">NIT:</span> <strong>{nit}</strong></p>
                   <p><span className="text-gray-500">Email:</span> <strong>{email}</strong></p>
-                  <p><span className="text-gray-500">URL:</span> <strong>{subdomain || '--'}.contapro.com.gt</strong></p>
+                  <p><span className="text-gray-500">Acceso:</span> <strong>{plan === 'personal' ? 'app.totalappgt.online' : `${subdomain || '--'}.totalappgt.online`}</strong></p>
                 </div>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">
