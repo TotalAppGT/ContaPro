@@ -180,29 +180,35 @@ export default function Configuracion() {
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Notificaciones</h3>
             <p className="text-sm text-gray-500">
-              {prefs.tipo === 'whatsapp' ? 'Alertas por WhatsApp activas (Plan Empresarial)' :
-               prefs.tipo === 'email' ? 'Notificaciones por email activas (Plan Profesional)' :
-               'Actualice a Plan Profesional o Empresarial para recibir alertas'}
+              {plan === 'empresarial' ? '📱 Alertas por WhatsApp activas' :
+               plan === 'profesional' ? '📧 Notificaciones por email activas' :
+               '🔒 Disponible en Plan Profesional y Empresarial'}
             </p>
           </div>
         </div>
-        <div className="flex items-end gap-3 max-w-md">
-          <Input
-            label="Teléfono WhatsApp (solo Plan Empresarial)"
-            type="tel"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            placeholder="+502 XXXX-XXXX"
-          />
-          <Button onClick={handleSavePhone} size="sm">
-            <Save className="w-4 h-4" /> Guardar
-          </Button>
-        </div>
-        <p className="text-xs text-gray-400 mt-2">
-          {plan === 'empresarial' ? '📱 Recibirás alertas de IVA, vencimientos y más por WhatsApp.' :
-           plan === 'profesional' ? '📧 Recibirás notificaciones por correo electrónico.' :
-           '🔒 Disponible en planes Profesional y Empresarial.'}
-        </p>
+        {plan === 'empresarial' && (
+          <>
+            <div className="flex items-end gap-3 max-w-md">
+              <Input
+                label="Teléfono WhatsApp"
+                type="tel"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                placeholder="+502 XXXX-XXXX"
+              />
+              <Button onClick={handleSavePhone} size="sm">
+                <Save className="w-4 h-4" /> Guardar
+              </Button>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">Recibirás alertas de IVA, vencimientos de suscripción y más directamente a tu WhatsApp.</p>
+          </>
+        )}
+        {plan === 'profesional' && (
+          <p className="text-xs text-gray-400">Las notificaciones se envían al correo registrado. Incluyen alertas de vencimiento y actividad importante.</p>
+        )}
+        {plan === 'personal' && (
+          <p className="text-xs text-gray-400">Actualiza a Plan Profesional o Empresarial para activar notificaciones.</p>
+        )}
       </Card>
 
       {/* Theme toggle */}
