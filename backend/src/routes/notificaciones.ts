@@ -4,6 +4,28 @@ import { enviarWhatsApp } from '../services/whatsappService';
 
 const router = Router();
 
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'licitrackgt2026';
+
+// Webhook de Meta: verificación (GET)
+router.get('/webhook', (req: Request, res: Response) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+    console.log('[WHATSAPP] Webhook verificado');
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
+});
+
+// Webhook de Meta: mensajes entrantes (POST)
+router.post('/webhook', (req: Request, res: Response) => {
+  console.log('[WHATSAPP] Mensaje recibido:', JSON.stringify(req.body));
+  res.sendStatus(200);
+});
+
 // Guardar teléfono para notificaciones
 router.post('/telefono', async (req: Request, res: Response) => {
   try {
