@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Card, CardHeader } from '@/components/ui/Card';
+import OnboardingTour from '@/components/OnboardingTour';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import type { FinancialReport } from '@/types';
@@ -83,6 +84,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <OnboardingTour />
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
         <p className="text-gray-500 mt-1">Resumen financiero de {user?.tenant_name}</p>
