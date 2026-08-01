@@ -1,12 +1,13 @@
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || '';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 
-export async function enviarWhatsApp(telefono: string, mensaje: string): Promise<boolean> {
+export async function enviarWhatsApp(telefono: string, mensaje: string): Promise<{ ok: boolean; error?: string }> {
   if (!WHATSAPP_PHONE_ID || !WHATSAPP_TOKEN) {
     console.log('[WHATSAPP] Simulado →', telefono, '|', mensaje);
-    return true;
+    return { ok: true };
   }
   try {
+    const numero = telefono.replace(/[^0-9]/g, '');
     const url = `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_ID}/messages`;
     const res = await fetch(url, {
       method: 'POST',
@@ -16,21 +17,20 @@ export async function enviarWhatsApp(telefono: string, mensaje: string): Promise
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        to: telefono.replace(/\D/g, ''),
+        to: numero,
         type: 'text',
         text: { body: mensaje },
       }),
     });
+    const data = await res.json();
     if (!res.ok) {
-      const err = await res.json();
-      console.error('[WHATSAPP] Error:', JSON.stringify(err));
-      return false;
+      console.error('[WHATSAPP] Error:', JSON.stringify(data));
+      return { ok: false, error: JSON.stringify(data) };
     }
     console.log('[WHATSAPP] Enviado a:', telefono);
-    return true;
+    return { ok: true };
   } catch (e: any) {
-    console.error('[WHATSAPP] Error:', e.message);
-    return false;
+    return { ok: false, error: e.message };
   }
 }
 
