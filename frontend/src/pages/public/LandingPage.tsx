@@ -17,28 +17,19 @@ const features = [
 
 const plans = [
   {
-    name: 'Personal',
-    price: '79',
-    description: 'Para emprendedores y pequeños negocios',
+    name: 'Personal', price: '79', description: 'Para emprendedores y pequeños negocios',
     features: ['1 empresa', 'Libro de Ventas', 'Libro de Compras', 'Reportes básicos de IVA', 'Soporte por email'],
-    cta: 'Comenzar gratis',
-    popular: false,
+    cta: 'Probar 14 días gratis', popular: false,
   },
   {
-    name: 'Profesional',
-    price: '199',
-    description: 'Para contadores y PyMEs en crecimiento',
-    features: ['Hasta 10 empresas', 'Gráfica T contable', 'Conciliación bancaria', 'Carga masiva SAT', 'Reportes fiscales completos', 'Soporte prioritario'],
-    cta: 'Comenzar gratis',
-    popular: true,
+    name: 'Profesional', price: '199', description: 'Para contadores y PyMEs en crecimiento',
+    features: ['Contabilidades ilimitadas', '3 usuarios', 'Gráfica T', 'Conciliación bancaria', 'Carga masiva SAT', 'Reportes fiscales SAT-2237', 'Soporte prioritario'],
+    cta: 'Probar 14 días gratis', popular: true,
   },
   {
-    name: 'Empresarial',
-    price: '399',
-    description: 'Para firmas contables y empresas grandes',
-    features: ['Empresas ilimitadas', 'Todo lo del plan Profesional', 'Usuarios ilimitados', 'API de integración', 'Personalización avanzada', 'Soporte 24/7'],
-    cta: 'Contáctenos',
-    popular: false,
+    name: 'Empresarial', price: '399', description: 'Para firmas contables y empresas grandes',
+    features: ['10 usuarios', 'Dominio .com.gt propio', 'API de integración', 'WhatsApp alertas', 'Soporte 24/7', 'Todo lo del plan Profesional'],
+    cta: 'Probar 14 días gratis', popular: false,
   },
 ];
 
@@ -105,15 +96,11 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register">
-              <Button size="lg" className="px-8">
-                Empezar gratis <ArrowRight className="w-5 h-5" />
+              <Button size="lg" className="px-8 text-lg">
+                Probar 14 dias gratis <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <a href="#features">
-              <Button variant="outline" size="lg">
-                Ver funcionalidades
-              </Button>
-            </a>
+            <p className="text-sm text-gray-500 mt-2 sm:mt-0">Sin tarjeta de credito · Cancela cuando quieras</p>
           </div>
         </div>
       </section>
@@ -138,6 +125,22 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Trial Banner */}
+      <section className="py-12 bg-gradient-to-r from-primary-700 to-primary-900">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+            Sin riesgo · Sin tarjeta de crédito
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">14 días de prueba completamente gratis</h2>
+          <p className="text-primary-100 text-lg mb-6">Acceda a todas las funcionalidades del plan Profesional. Cancele cuando quiera.</p>
+          <Link to="/register">
+            <Button size="lg" className="bg-accent-500 hover:bg-accent-600 text-gray-900 font-bold px-10 py-4 text-lg">
+              Comenzar prueba gratis
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -218,8 +221,8 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="bg-gradient-to-br from-primary-700 to-primary-900 rounded-3xl p-12 shadow-2xl">
             <h2 className="text-3xl font-bold text-white mb-4">¿Listo para simplificar su contabilidad?</h2>
-            <p className="text-primary-100 mb-8 max-w-xl mx-auto">
-              Únase a cientos de contadores guatemaltecos que ya confían en ContaPro. Prueba gratuita de 14 días.
+             <p className="text-primary-100 mb-8 max-w-xl mx-auto">
+              Todos los planes incluyen 14 dias de prueba gratis. Sin tarjeta de credito, cancele cuando quiera.
             </p>
             <Link to="/register">
               <Button size="lg" className="bg-white text-primary-700 hover:bg-gray-100">
