@@ -1,8 +1,21 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
+import crypto from 'crypto';
 
 const router = Router();
+
+const RECURRENTE_KEY = process.env.RECURRENTE_API_KEY || '';
+const RECURRENTE_SECRET = process.env.RECURRENTE_SIGNING_SECRET || '';
+
+function verifyWebhookSignature(body: string, signature: string): boolean {
+  if (!RECURRENTE_SECRET) return true;
+  try {
+    const hmac = crypto.createHmac('sha256', RECURRENTE_SECRET);
+    const digest = hmac.update(body).digest('hex');
+    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature || ''));
+  } catch { return false; }
+}
 
 const PLANS = [
   {
@@ -68,6 +81,15 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
 
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
+    const signature = req.headers['recurrente-signature'] as string || '';
+    const rawBody = JSON.stringify(req.body);
+
+    if (RECURRENTE_SECRET && !verifyWebhookSignature(rawBody, signature)) {
+      console.warn('[Recurrente] Firma inválida en webhook');
+      res.status(403).json({ error: 'Firma inválida' });
+      return;
+    }
+
     const { subscription_id, status, metadata } = req.body;
     const subId = subscription_id || metadata?.subscription_id;
     if (!subId) { res.status(400).json({ error: 'subscription_id requerido' }); return; }
@@ -83,6 +105,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
           'UPDATE tenants SET estado = $1, plan = $2, updated_at = NOW() WHERE id = $3',
           ['activo', result.rows[0].plan, result.rows[0].tenant_id]
         );
+        console.log(`[Recurrente] Suscripcion ${subId} activada`);
       }
     } else if (status === 'failed' || status === 'cancelled') {
       await pool.query("UPDATE subscriptions SET estado = 'cancelado' WHERE id = $1", [subId]);
