@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -129,6 +130,7 @@ export default function GraficaT() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      <HelpBar tips={['Seleccione una cuenta del catalogo en cada linea.', 'Ingrese el monto en Debe O en Haber, no en ambos.', 'El boton Registrar solo se activa cuando Debe = Haber.', 'Use el tipo de poliza Diario para operaciones normales.']} />
       <h2 className="text-2xl font-bold text-gray-900">Gráfica T - Registro de Partidas</h2>
 
       <Card>

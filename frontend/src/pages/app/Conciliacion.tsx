@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { Plus, Download, Printer, CheckCircle2, Loader2, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -207,6 +208,7 @@ export default function Conciliacion() {
 
   return (
     <div className="space-y-6">
+      <HelpBar tips={['Agregue sus cuentas bancarias primero.', 'Registre cada transaccion con su monto y tipo.', 'Use el Panel de Cuadre para verificar saldos.', 'Marque como Conciliado las transacciones verificadas.']} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-900">Conciliación Bancaria</h2>
         <div className="flex items-center gap-3">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { Plus, Trash2, Users, Save, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -90,6 +91,7 @@ export default function Clientes() {
 
   return (
     <div className="space-y-6">
+      <HelpBar tips={['Agregue sus clientes con NIT y regimen fiscal.', 'Seleccione el cliente activo para filtrar reportes.', 'Puede editar o eliminar clientes existentes.', 'Cada cliente puede tener su propia configuracion fiscal.']} />
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Clientes</h2>
         <p className="text-gray-500 text-sm mt-1">

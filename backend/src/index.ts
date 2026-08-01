@@ -92,6 +92,9 @@ async function startup() {
       await pool.query(sql);
       console.log('Schema aplicado correctamente.');
     }
+    // Agregar columnas nuevas si no existen
+    await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_dia VARCHAR(2) DEFAULT '1'");
+    await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
   } catch (e: any) {
     console.error('Error schema:', e.message);
   }

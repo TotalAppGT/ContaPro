@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { Shield, Calendar, CreditCard, Loader2, Moon, Sun, Key, Save, Bell, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
@@ -29,6 +30,8 @@ export default function Configuracion() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [telefono, setTelefono] = useState('');
   const [prefs, setPrefs] = useState<any>({});
+  const [alertaDia, setAlertaDia] = useState('1');
+  const [alertaHora, setAlertaHora] = useState('08:00');
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -66,10 +69,15 @@ export default function Configuracion() {
   };
 
   const handleTestWhatsApp = async () => {
+    try { await api.post('/notificaciones/test'); toast.success('Mensaje de prueba enviado'); }
+    catch (err: any) { toast.error(err.message || 'Error al enviar'); }
+  };
+
+  const handleSaveAlerta = async () => {
     try {
-      await api.post('/notificaciones/test');
-      toast.success('Mensaje de prueba enviado');
-    } catch (err: any) { toast.error(err.message || 'Error al enviar'); }
+      await api.post('/notificaciones/alerta', { dia: alertaDia, hora: alertaHora });
+      toast.success('Alerta programada');
+    } catch { toast.error('Error al guardar'); }
   };
 
   const handleChangePassword = async () => {
@@ -116,6 +124,7 @@ export default function Configuracion() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
+      <HelpBar tips={['Cambie su contrasena periodicamente.', 'Active el modo oscuro si prefiere temas oscuros.', 'Configure notificaciones segun su plan.', 'Los cambios se guardan automaticamente.']} />
       <h2 className="text-2xl font-bold text-gray-900">Configuración</h2>
 
       {/* Subscription info */}
@@ -235,6 +244,32 @@ export default function Configuracion() {
           <p className="text-xs text-gray-400">Actualiza a Plan Profesional o Empresarial para activar notificaciones.</p>
         )}
       </Card>
+
+      {plan === 'empresarial' && (
+        <Card>
+          <div className="flex items-center gap-3 mb-4">
+            <Bell className="w-5 h-5 text-primary-700" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Programar Alertas</h3>
+              <p className="text-sm text-gray-500">Personaliza el dia y hora de tus notificaciones</p>
+            </div>
+          </div>
+          <div className="flex items-end gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dia del mes</label>
+              <select value={alertaDia} onChange={e => setAlertaDia(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                <option value="1">Dia 1</option><option value="5">Dia 5</option><option value="10">Dia 10</option><option value="15">Dia 15</option><option value="20">Dia 20</option><option value="25">Dia 25</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+              <input type="time" value={alertaHora} onChange={e => setAlertaHora(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+            </div>
+            <Button onClick={handleSaveAlerta} size="sm"><Save className="w-4 h-4" /> Guardar</Button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">Se enviara una alerta recordatorio de IVA el dia {alertaDia} de cada mes a las {alertaHora}.</p>
+        </Card>
+      )}
 
       {/* Theme toggle */}
       <Card>

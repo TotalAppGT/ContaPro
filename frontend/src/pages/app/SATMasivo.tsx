@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { Upload, FileSpreadsheet, Clipboard, Loader2, Play, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
@@ -132,6 +133,7 @@ export default function SATMasivo() {
 
   return (
     <div className="space-y-6">
+      <HelpBar tips={['Arrastre su archivo CSV o Excel a la zona de carga.', 'Seleccione el tipo: Ventas o Compras.', 'Elija la agrupacion: Por Factura, Diario, Semanal o Mensual.', 'Verifique el resumen antes de procesar.']} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-gray-900">Carga Masiva SAT</h2>
         <div className="text-sm text-gray-500">

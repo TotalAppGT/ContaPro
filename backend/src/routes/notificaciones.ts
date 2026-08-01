@@ -26,7 +26,18 @@ router.post('/webhook', (req: Request, res: Response) => {
   res.sendStatus(200);
 });
 
-// Guardar teléfono para notificaciones
+// Guardar preferencias de alerta
+router.post('/alerta', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { dia, hora } = req.body;
+    await pool.query(
+      'UPDATE tenants SET alerta_dia = $1, alerta_hora = $2, updated_at = NOW() WHERE id = $3',
+      [dia || '1', hora || '08:00', tenantId]
+    );
+    res.json({ message: 'Alerta programada correctamente' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
 router.post('/telefono', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;

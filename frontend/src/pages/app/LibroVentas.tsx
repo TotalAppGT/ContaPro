@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { Plus, FileDown, UploadCloud } from 'lucide-react';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -89,6 +90,7 @@ export default function LibroVentas() {
 
   return (
     <div className="space-y-6">
+      <HelpBar tips={['Agregue facturas de venta con el boton Agregar.', 'Puede descargar el libro completo en Excel.', 'El total de IVA se calcula automaticamente.', 'Use el boton Subir archivo para carga masiva de facturas.']} />
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Libro de Ventas</h2>
         <div className="flex items-center gap-2">

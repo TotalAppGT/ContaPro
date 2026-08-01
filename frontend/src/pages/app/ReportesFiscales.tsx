@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import HelpBar from '@/components/HelpBar';
 import { api } from '@/lib/api';
 
 declare const XLSX: any;
@@ -160,6 +161,7 @@ export default function ReportesFiscales() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: 24 }}>
+      <HelpBar tips={['Seleccione el mes y ano para generar reportes.', 'Use las pestanas para cambiar entre SAT-2237, Cruce e Integracion.', 'Descargue en Excel o PDF con los botones superiores.', 'El SAT-2237 muestra el IVA a pagar del periodo.']} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>

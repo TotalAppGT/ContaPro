@@ -7,6 +7,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Card, CardHeader } from '@/components/ui/Card';
 import OnboardingTour from '@/components/OnboardingTour';
+import HelpBar from '@/components/HelpBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import type { FinancialReport } from '@/types';
@@ -85,6 +86,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <OnboardingTour />
+      <HelpBar title="Bienvenido a ContaPro" tips={['Use la barra lateral izquierda para navegar entre modulos.', 'Las tarjetas superiores muestran un resumen financiero del mes actual.', 'Agregue ventas y compras para que los reportes reflejen datos reales.', 'Configure su perfil en Mi Oficina para personalizar los reportes.']} />
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
         <p className="text-gray-500 mt-1">Resumen financiero de {user?.tenant_name}</p>
