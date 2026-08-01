@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
+import { enviarWhatsApp } from '../services/whatsappService';
 
 const router = Router();
 
@@ -14,6 +15,33 @@ router.post('/telefono', async (req: Request, res: Response) => {
       [telefono, tenantId]
     );
     res.json({ message: 'Teléfono guardado. Recibirás alertas por WhatsApp.' });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Enviar mensaje de prueba
+router.post('/test', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const result = await pool.query('SELECT telefono, nombre FROM tenants WHERE id = $1', [tenantId]);
+    const t = result.rows[0];
+
+    if (!t?.telefono) {
+      res.status(400).json({ error: 'No hay teléfono registrado. Guárdelo primero.' });
+      return;
+    }
+
+    const enviado = await enviarWhatsApp(
+      t.telefono,
+      `✅ *ContaPro - Mensaje de prueba*\n\nHola ${t.nombre || ''}, tus notificaciones de WhatsApp están configuradas correctamente.\n\nRecibirás alertas de:\n📊 IVA por pagar\n⚠️ Vencimientos de suscripción\n📋 Recordatorios contables\n\n— ContaPro Guatemala`
+    );
+
+    if (enviado) {
+      res.json({ message: `Mensaje de prueba enviado a ${t.telefono}` });
+    } else {
+      res.status(500).json({ error: 'Error al enviar. Verifique el token de WhatsApp.' });
+    }
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

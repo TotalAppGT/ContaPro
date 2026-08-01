@@ -61,8 +61,15 @@ export default function Configuracion() {
   const handleSavePhone = async () => {
     try {
       await api.post('/notificaciones/telefono', { telefono });
-      toast.success('Teléfono guardado para notificaciones');
+      toast.success('Teléfono guardado');
     } catch { toast.error('Error al guardar'); }
+  };
+
+  const handleTestWhatsApp = async () => {
+    try {
+      await api.post('/notificaciones/test');
+      toast.success('Mensaje de prueba enviado');
+    } catch (err: any) { toast.error(err.message || 'Error al enviar'); }
   };
 
   const handleChangePassword = async () => {
@@ -198,6 +205,9 @@ export default function Configuracion() {
               />
               <Button onClick={handleSavePhone} size="sm">
                 <Save className="w-4 h-4" /> Guardar
+              </Button>
+              <Button onClick={handleTestWhatsApp} variant="outline" size="sm" disabled={!telefono}>
+                <Bell className="w-4 h-4" /> Probar
               </Button>
             </div>
             <p className="text-xs text-gray-400 mt-2">Recibirás alertas de IVA, vencimientos de suscripción y más directamente a tu WhatsApp.</p>
