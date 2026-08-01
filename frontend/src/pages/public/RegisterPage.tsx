@@ -35,7 +35,8 @@ export default function RegisterPage() {
         ? name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') + Math.random().toString(36).substring(2, 6)
         : subdomain;
       await register({ name, nit, email, password, subdomain: finalSubdomain, plan });
-      navigate('/login');
+      toast.success('Cuenta creada. Bienvenido a ContaPro!');
+      navigate('/app');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al crear la cuenta');
     } finally {

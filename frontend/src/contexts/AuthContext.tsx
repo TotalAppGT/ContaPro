@@ -99,12 +99,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (data: RegisterData) => {
-    const firebaseToken = await firebaseRegister(data.email, data.password);
-    const res = await api.post<LoginResponse>('/auth/firebase-register', {
-      firebaseToken, email: data.email,
-      name: data.name, nit: data.nit, subdomain: data.subdomain, plan: data.plan,
-    });
-    saveSession(res.token, res.user, res.tenant);
+    try {
+      const firebaseToken = await firebaseRegister(data.email, data.password);
+      const res = await api.post<LoginResponse>('/auth/firebase-register', {
+        firebaseToken, email: data.email,
+        name: data.name, nit: data.nit, subdomain: data.subdomain, plan: data.plan,
+      });
+      saveSession(res.token, res.user, res.tenant);
+    } catch (e: any) {
+      if (e.code === 'auth/email-already-in-use' || e.message?.includes('email-already-in-use')) {
+        throw new Error('Este correo ya esta registrado. Inicie sesion o use otro correo.');
+      }
+      throw new Error(e.message || 'Error al registrar. Intente de nuevo.');
+    }
   };
 
   const logout = async () => {
