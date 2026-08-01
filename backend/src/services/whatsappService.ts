@@ -17,9 +17,10 @@ export async function enviarWhatsApp(telefono: string, mensaje: string): Promise
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
+        recipient_type: 'individual',
         to: numero,
         type: 'text',
-        text: { body: mensaje },
+        text: { preview_url: false, body: mensaje },
       }),
     });
     const data = await res.json();
