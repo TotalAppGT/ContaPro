@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
-import { enviarWhatsApp } from '../services/whatsappService';
+import { enviarWhatsApp, enviarPlantillaAlerta, enviarWhatsAppDocumento } from '../services/whatsappService';
 
 const router = Router();
 
@@ -60,11 +60,12 @@ router.post('/telefono', async (req: Request, res: Response) => {
   }
 });
 
-// Enviar mensaje de prueba
+// Enviar mensaje de prueba usando la plantilla aprobada
 router.post('/test', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
-    const result = await pool.query('SELECT telefono, nombre FROM tenants WHERE id = $1', [tenantId]);
+    const nombreUsuario = req.user!.name || '';
+    const result = await pool.query('SELECT telefono FROM tenants WHERE id = $1', [tenantId]);
     const t = result.rows[0];
 
     if (!t?.telefono) {
@@ -72,22 +73,50 @@ router.post('/test', async (req: Request, res: Response) => {
       return;
     }
 
-    const enviado = await enviarWhatsApp(
-      t.telefono,
-      `*ContaPro - Mensaje de Prueba*\n\nHola ${t.nombre || ''}, sus notificaciones de WhatsApp estan configuradas correctamente.\n\nRecibira alertas de:\n- Vencimientos de IVA\n- Fechas limite de declaracion\n- Renovacion de suscripcion\n\n*ContaPro Guatemala*`
-    );
+    const enviado = await enviarPlantillaAlerta(t.telefono, nombreUsuario);
 
     if (enviado.ok) {
-      res.json({ message: `Mensaje de prueba enviado a ${t.telefono}` });
+      res.json({ message: `Mensaje de prueba enviado a ${t.telefono} usando la plantilla aprobada` });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Error al enviar. Detalle: ' + (enviado.error || 'Desconocido'),
         debug: {
           phoneId: process.env.WHATSAPP_PHONE_ID ? 'Configurado' : 'NO CONFIGURADO',
           token: process.env.WHATSAPP_TOKEN ? 'Configurado' : 'NO CONFIGURADO',
+          template: 'alerta_totalappgt (es_MX)',
           telefono: t.telefono,
         }
       });
+    }
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Enviar documento PDF de prueba (adjunto)
+router.post('/test-documento', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const result = await pool.query('SELECT telefono FROM tenants WHERE id = $1', [tenantId]);
+    const t = result.rows[0];
+
+    if (!t?.telefono) {
+      res.status(400).json({ error: 'No hay teléfono registrado. Guárdelo primero.' });
+      return;
+    }
+
+    const { url, filename } = req.body || {};
+    if (!url) {
+      res.status(400).json({ error: 'URL del PDF requerida (campo url)' });
+      return;
+    }
+
+    const enviado = await enviarWhatsAppDocumento(t.telefono, url, filename || 'documento.pdf', 'ContaPro - Documento fiscal');
+
+    if (enviado.ok) {
+      res.json({ message: `Documento enviado a ${t.telefono}` });
+    } else {
+      res.status(500).json({ error: 'Error al enviar documento. Detalle: ' + (enviado.error || 'Desconocido') });
     }
   } catch (e: any) {
     res.status(500).json({ error: e.message });

@@ -73,6 +73,13 @@ export default function Configuracion() {
     catch (err: any) { toast.error(err.message || 'Error al enviar'); }
   };
 
+  const handleTestDocumento = async () => {
+    const url = prompt('URL pública del PDF a enviar:');
+    if (!url) return;
+    try { await api.post('/notificaciones/test-documento', { url, filename: 'ContaPro-Documento.pdf' }); toast.success('Documento enviado'); }
+    catch (err: any) { toast.error(err.message || 'Error al enviar'); }
+  };
+
   const handleSaveAlerta = async () => {
     try {
       await api.post('/notificaciones/alerta', { dia: alertaDia, hora: alertaHora });
@@ -228,6 +235,7 @@ export default function Configuracion() {
                 <Input label="Tu numero WhatsApp" type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="+502 XXXX-XXXX" />
                 <Button onClick={handleSavePhone} size="sm"><Save className="w-4 h-4" /> Guardar</Button>
                 <Button onClick={handleTestWhatsApp} variant="outline" size="sm" disabled={!telefono}><Bell className="w-4 h-4" /> Probar</Button>
+                <Button onClick={handleTestDocumento} variant="outline" size="sm" disabled={!telefono}><Phone className="w-4 h-4" /> Probar PDF</Button>
               </div>
               {telefono && (
                 <button onClick={async () => { setTelefono(''); await handleSavePhone(); toast.success('Numero desvinculado'); }} className="text-xs text-red-500 hover:underline mt-2">
