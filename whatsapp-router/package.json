@@ -1,0 +1,13 @@
+{
+  "name": "whatsapp-webhook-router",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Router universal de webhooks WhatsApp Cloud API para múltiples sistemas SaaS (ContaPro, LicitrackGT, etc.)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
