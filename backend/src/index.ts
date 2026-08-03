@@ -97,6 +97,7 @@ async function startup() {
     // Agregar columnas nuevas si no existen
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_dia VARCHAR(2) DEFAULT '1'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
+    await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS nombre_whatsapp VARCHAR(100)");
     // Tabla de mensajes WhatsApp para multi-sistema routing
     await pool.query(`
       CREATE TABLE IF NOT EXISTS whatsapp_messages (

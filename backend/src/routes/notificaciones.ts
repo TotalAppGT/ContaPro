@@ -86,11 +86,12 @@ router.post('/test', async (req: Request, res: Response) => {
       return;
     }
 
-    const owner = await pool.query(
-      "SELECT nombre FROM users WHERE tenant_id = $1 AND rol = 'owner' LIMIT 1",
+    const info = await pool.query(
+      'SELECT nombre, nombre_whatsapp FROM tenants WHERE id = $1',
       [tenantId]
     );
-    const nombreDueno = req.body?.nombre || (owner.rows[0]?.nombre) || req.user!.name || '';
+    const tInfo = info.rows[0] || {};
+    const nombreDueno = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || 'ContaPro';
 
     const mensaje = textoAlerta('vinculacion', nombreDueno);
     const enviado = await enviarPlantillaAlerta(t.telefono, nombreDueno, mensaje);
@@ -127,12 +128,13 @@ router.post('/enviar', async (req: Request, res: Response) => {
       return;
     }
 
-    // Obtener el nombre del owner del tenant (dueño real del número)
-    const owner = await pool.query(
-      "SELECT nombre FROM users WHERE tenant_id = $1 AND rol = 'owner' LIMIT 1",
+    // Obtener nombre dinámico: 1) del payload, 2) nombre_whatsapp del tenant, 3) nombre del tenant
+    const info = await pool.query(
+      'SELECT nombre, nombre_whatsapp FROM tenants WHERE id = $1',
       [tenantId]
     );
-    const nombreDueno = req.body?.nombre || (owner.rows[0]?.nombre) || nombreUsuario;
+    const tInfo = info.rows[0] || {};
+    const nombreDueno = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || 'ContaPro';
 
     const mensaje = textoAlerta(tipo || 'general', nombreDueno, { periodo, monto: parseFloat(monto) || 0, plan, dias });
     const enviado = await enviarPlantillaAlerta(t.telefono, nombreDueno, mensaje);
@@ -177,18 +179,32 @@ router.post('/test-documento', async (req: Request, res: Response) => {
   }
 });
 
+// Guardar nombre personalizado para WhatsApp
+router.post('/nombre', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const { nombre_whatsapp } = req.body || {};
+    await pool.query(
+      'UPDATE tenants SET nombre_whatsapp = $1, updated_at = NOW() WHERE id = $2',
+      [nombre_whatsapp || null, tenantId]
+    );
+    res.json({ message: 'Nombre WhatsApp actualizado' });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // Obtener preferencias
 router.get('/preferencias', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
     const result = await pool.query(
-      'SELECT telefono, plan FROM tenants WHERE id = $1',
+      'SELECT telefono, plan, nombre_whatsapp, nombre FROM tenants WHERE id = $1',
       [tenantId]
     );
     const t = result.rows[0];
     res.json({
       telefono: t?.telefono || '',
       plan: t?.plan || 'personal',
+      nombre_whatsapp: t?.nombre_whatsapp || t?.nombre || '',
       notificaciones_activas: t?.plan === 'empresarial' || t?.plan === 'profesional',
       tipo: t?.plan === 'empresarial' ? 'whatsapp' : t?.plan === 'profesional' ? 'email' : 'none',
     });
