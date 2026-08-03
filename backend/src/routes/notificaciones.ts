@@ -59,17 +59,17 @@ router.post('/telefono', async (req: Request, res: Response) => {
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
   switch (tipo) {
     case 'vinculacion':
-      return `ContaPro. Su numero de WhatsApp ha sido vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.`;
+      return `*ContaPro*. Su numero de WhatsApp ha sido vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.`;
     case 'iva':
-      return `ContaPro. Declaracion de IVA ${datos.periodo || 'pendiente'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento para evitar multas.`;
+      return `*ContaPro*. Declaracion de IVA ${datos.periodo || 'pendiente'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento para evitar multas.`;
     case 'vencimiento':
-      return `ContaPro. Su plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos del sistema contable.`;
+      return `*ContaPro*. Su plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos del sistema contable.`;
     case 'sat':
-      return `ContaPro. Tiene obligaciones tributarias pendientes ante la SAT. Revise y presente sus declaraciones desde el panel fiscal.`;
+      return `*ContaPro*. Tiene obligaciones tributarias pendientes ante la SAT. Revise y presente sus declaraciones desde el panel fiscal.`;
     case 'bienvenida':
-      return `ContaPro \u2014 Sistema Contable para Guatemala. Su cuenta esta activa. Acceda a su panel para empezar a gestionar su contabilidad.`;
+      return `*ContaPro* \u2014 Sistema Contable para Guatemala. Su cuenta esta activa. Acceda a su panel para empezar a gestionar su contabilidad.`;
     default:
-      return `ContaPro \u2014 Sistema Contable para Guatemala. Tiene una notificacion pendiente en su panel.`;
+      return `*ContaPro* \u2014 Sistema Contable para Guatemala. Tiene una notificacion pendiente en su panel.`;
   }
 }
 
