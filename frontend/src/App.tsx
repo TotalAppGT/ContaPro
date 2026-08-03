@@ -9,6 +9,8 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 const LandingPage = lazy(() => import('@/pages/public/LandingPage'));
 const LoginPage = lazy(() => import('@/pages/public/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/public/RegisterPage'));
+const PrivacyPage = lazy(() => import('@/pages/public/PrivacyPage'));
+const TermsPage = lazy(() => import('@/pages/public/TermsPage'));
 const Dashboard = lazy(() => import('@/pages/app/Dashboard'));
 const GraficaT = lazy(() => import('@/pages/app/GraficaT'));
 const LibroVentas = lazy(() => import('@/pages/app/LibroVentas'));
@@ -98,6 +100,8 @@ export default function App() {
             <Route path="/" element={subdomain === 'app' ? <Navigate to="/app" replace /> : subdomain === 'admin' ? <Navigate to="/admin" replace /> : <LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/privacidad" element={<PrivacyPage />} />
+            <Route path="/terminos" element={<TermsPage />} />
             <Route
               path="/app/*"
               element={

@@ -412,12 +412,11 @@ export default function LandingPage() {
 
             {/* Soporte */}
             <div>
-              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Soporte</h4>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Legal</h4>
               <ul className="space-y-3 text-sm">
-                <li><span className="hover:text-white transition-colors cursor-pointer">Centro de ayuda</span></li>
-                <li><span className="hover:text-white transition-colors cursor-pointer">Contacto</span></li>
-                <li><span className="hover:text-white transition-colors cursor-pointer">Términos y condiciones</span></li>
-                <li><span className="hover:text-white transition-colors cursor-pointer">Privacidad</span></li>
+                <li><Link to="/privacidad" className="hover:text-white transition-colors">Política de Privacidad</Link></li>
+                <li><Link to="/terminos" className="hover:text-white transition-colors">Términos y Condiciones</Link></li>
+                <li><span className="hover:text-white transition-colors cursor-pointer">Cookies</span></li>
               </ul>
             </div>
 
@@ -426,23 +425,23 @@ export default function LandingPage() {
               <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Contacto</h4>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-2.5">
-                  <Globe className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  info@contapro.com.gt
+                  <span className="text-gray-500">WhatsApp:</span>
+                  <a href="https://wa.me/50258303182" target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300 transition-colors">+502 5830-3182</a>
                 </li>
                 <li className="flex items-center gap-2.5">
-                  <Globe className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  +502 2222-0000
+                  <span className="text-gray-500">Email:</span>
+                  <a href="mailto:info@totalappgt.online" className="hover:text-white transition-colors">info@totalappgt.online</a>
                 </li>
-                <li className="text-gray-500 pl-7">Guatemala City, GT</li>
+                <li className="text-gray-500">Guatemala, C.A.</li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-            <p>&copy; {new Date().getFullYear()} ContaPro. Todos los derechos reservados.</p>
+            <p>&copy; {new Date().getFullYear()} <span className="text-white font-medium">TotalAppGT</span> — ContaPro. Todos los derechos reservados.</p>
             <div className="flex items-center gap-6 text-xs">
-              <span className="hover:text-white transition-colors cursor-pointer">Términos</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Privacidad</span>
+              <Link to="/terminos" className="hover:text-white transition-colors">Términos</Link>
+              <Link to="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
             </div>
           </div>
         </div>

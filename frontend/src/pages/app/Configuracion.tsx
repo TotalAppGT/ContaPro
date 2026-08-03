@@ -258,24 +258,26 @@ export default function Configuracion() {
           <div className="flex items-center gap-3 mb-4">
             <Bell className="w-5 h-5 text-primary-700" />
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Programar Alertas</h3>
-              <p className="text-sm text-gray-500">Personaliza el dia y hora de tus notificaciones</p>
+              <h3 className="text-lg font-semibold text-gray-900">Programar Alertas Fiscales</h3>
+              <p className="text-sm text-gray-500">ContaPro envia automaticamente alertas de IVA a tu WhatsApp</p>
             </div>
           </div>
-          <div className="flex items-end gap-4">
+          <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Dia del mes</label>
-              <select value={alertaDia} onChange={e => setAlertaDia(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
-                <option value="1">Dia 1</option><option value="5">Dia 5</option><option value="10">Dia 10</option><option value="15">Dia 15</option><option value="20">Dia 20</option><option value="25">Dia 25</option>
+              <select value={alertaDia} onChange={e => setAlertaDia(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white w-full max-w-xs">
+                <option value="1">Dia 1</option><option value="5">Dia 5</option><option value="10">Dia 10</option><option value="15">Dia 15</option><option value="20">Dia 20</option><option value="25">Dia 25</option><option value="30">Dia 30</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
               <input type="time" value={alertaHora} onChange={e => setAlertaHora(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
             </div>
-            <Button onClick={handleSaveAlerta} size="sm"><Save className="w-4 h-4" /> Guardar</Button>
+            <Button onClick={handleSaveAlerta} size="sm"><Save className="w-4 h-4" /> Guardar Programacion</Button>
           </div>
-          <p className="text-xs text-gray-400 mt-2">Se enviara una alerta recordatorio de IVA el dia {alertaDia} de cada mes a las {alertaHora}.</p>
+          <p className="text-xs text-gray-400 mt-3 bg-blue-50 p-2 rounded">
+            ContaPro revisa automaticamente cada 5 minutos y envia una alerta fiscal con el IVA del mes (ventas, compras y neto a pagar) el dia {alertaDia} de cada mes a las {alertaHora}.
+          </p>
         </Card>
       )}
 
