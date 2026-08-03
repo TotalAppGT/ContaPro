@@ -58,8 +58,6 @@ router.post('/telefono', async (req: Request, res: Response) => {
 // Formato estandar ContaPro para todos los tipos de mensaje
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
   const titulo = '*ContaPro*';
-  const firma = '\n\u2014 *ContaPro* \u2022 Sistema Contable Guatemala';
-
   const fmtQ = (v: any) => {
     const n = parseFloat(v) || 0;
     return `Q${n.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -67,17 +65,17 @@ function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = 
 
   switch (tipo) {
     case 'vinculacion':
-      return `${titulo} \u2014 Vinculacion Exitosa\n\nSu numero de WhatsApp fue vinculado.\nRecibira alertas fiscales, vencimientos y recordatorios.\n\nPara desvincular, use la opcion en su panel.${firma}`;
+      return `${titulo} — Vinculacion Exitosa. Su numero de WhatsApp fue vinculado. Recibira alertas fiscales, vencimientos y recordatorios. Para desvincular, use la opcion en su panel. — ${titulo} • Sistema Contable Guatemala`;
     case 'iva':
-      return `${titulo} \u2014 Alerta Fiscal\n\n\u2022 Periodo fiscal: ${datos.periodo || 'pendiente'}\n\u2022 Impuesto: IVA\n\u2022 Monto a declarar: ${fmtQ(datos.monto)}\n\u2022 Formulario: SAT-2237\n\u2022 Accion: Presente la declaracion antes del vencimiento para evitar multas e intereses.\n\u2022 Panel: contapro.totalappgt.online${firma}`;
+      return `${titulo} — Alerta Fiscal  |  Periodo: ${datos.periodo || 'pendiente'}  |  Impuesto: IVA  |  Monto a declarar: ${fmtQ(datos.monto)}  |  Formulario: SAT-2237  |  Accion: Presente antes del vencimiento para evitar multas.  |  contapro.totalappgt.online  |  — ${titulo} • Guatemala`;
     case 'vencimiento':
-      return `${titulo} \u2014 Renovacion de Plan\n\n\u2022 Plan actual: ${datos.plan || 'ContaPro'}\n\u2022 Vence en: ${datos.dias || 'pocos'} dia(s)\n\u2022 Accion: Renueve su suscripcion para mantener acceso a todos los modulos contables.\n\u2022 Panel: contapro.totalappgt.online${firma}`;
+      return `${titulo} — Renovacion  |  Plan: ${datos.plan || 'ContaPro'}  |  Vence en: ${datos.dias || 'pocos'} dias  |  Accion: Renueve para mantener acceso a todos los modulos.  |  contapro.totalappgt.online  |  — ${titulo} • Guatemala`;
     case 'sat':
-      return `${titulo} \u2014 Obligaciones SAT\n\n\u2022 Estado: Declaraciones tributarias pendientes\n\u2022 Accion: Revise y presente sus impuestos desde el panel fiscal.\n\u2022 Panel: contapro.totalappgt.online${firma}`;
+      return `${titulo} — Obligaciones SAT  |  Estado: Declaraciones pendientes  |  Accion: Revise y presente sus impuestos desde el panel fiscal.  |  contapro.totalappgt.online  |  — ${titulo} • Guatemala`;
     case 'bienvenida':
-      return `${titulo} \u2014 Bienvenido\n\nSu cuenta contable esta activa.\n\n\u2022 Modulos: Contabilidad, Ventas, Compras, SAT, Reportes\n\u2022 Acceda a: contapro.totalappgt.online${firma}`;
+      return `${titulo} — Bienvenido. Su cuenta contable esta activa. Modulos: Contabilidad, Ventas, Compras, SAT, Reportes. Acceda a contapro.totalappgt.online — ${titulo} • Guatemala`;
     default:
-      return `${titulo} \u2014 Notificacion\n\nTiene informacion pendiente en su panel contable.\nAcceda para revisar sus ultimos movimientos.${firma}`;
+      return `${titulo} — Notificacion. Tiene informacion pendiente en su panel contable. Acceda para revisar. — ${titulo} • Guatemala`;
   }
 }
 

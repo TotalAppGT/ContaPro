@@ -64,7 +64,7 @@ export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: str
         type: 'body',
         parameters: [
           { type: 'text', text: (nombreUsuario || ' ').slice(0, 80) },
-          { type: 'text', text: truncarMultilinea(mensaje || '', 1024) },
+          { type: 'text', text: truncar(mensaje || '', 1024) },
         ],
       }],
     },
