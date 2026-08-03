@@ -54,21 +54,22 @@ router.post('/telefono', async (req: Request, res: Response) => {
   }
 });
 
-// Plantillas de texto para el parametro {{2}} de notificacion_sistema_ia
-// {{1}} = nombre, {{2}} = mensaje personalizado con marca ContaPro
+// {{2}} se inserta en: "...pendiente en la plataforma de {{2}}."
+// Formato estandar ContaPro para todos los tipos de mensaje
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
-  const n = nombre || 'Usuario';
   switch (tipo) {
+    case 'vinculacion':
+      return `ContaPro. Su numero de WhatsApp ha sido vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.`;
     case 'iva':
-      return `ContaPro | ${n}, IVA ${datos.periodo || 'este mes'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento.`;
+      return `ContaPro. Declaracion de IVA ${datos.periodo || 'pendiente'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento para evitar multas.`;
     case 'vencimiento':
-      return `ContaPro | ${n}, plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso.`;
+      return `ContaPro. Su plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos del sistema contable.`;
     case 'sat':
-      return `ContaPro | ${n}, obligaciones SAT pendientes. Revise declaraciones en su panel.`;
+      return `ContaPro. Tiene obligaciones tributarias pendientes ante la SAT. Revise y presente sus declaraciones desde el panel fiscal.`;
     case 'bienvenida':
-      return `ContaPro | Bienvenido ${n}. Su cuenta esta activa. Acceda a contapro.totalappgt.online`;
+      return `ContaPro \u2014 Sistema Contable para Guatemala. Su cuenta esta activa. Acceda a su panel para empezar a gestionar su contabilidad.`;
     default:
-      return `ContaPro | ${n}, notificacion pendiente en su panel.`;
+      return `ContaPro \u2014 Sistema Contable para Guatemala. Tiene una notificacion pendiente en su panel.`;
   }
 }
 
@@ -85,7 +86,7 @@ router.post('/test', async (req: Request, res: Response) => {
       return;
     }
 
-    const mensaje = textoAlerta('bienvenida', nombreUsuario);
+    const mensaje = textoAlerta('vinculacion', nombreUsuario);
     const enviado = await enviarPlantillaAlerta(t.telefono, nombreUsuario, mensaje);
 
     if (enviado.ok) {
