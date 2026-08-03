@@ -258,15 +258,22 @@ export default function LandingPage() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`relative flex flex-col bg-white rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                className={`relative flex flex-col rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
                   plan.popular
-                    ? 'border-2 border-primary-700 shadow-xl shadow-primary-700/10 ring-1 ring-primary-700/10'
-                    : 'border border-gray-200 shadow-sm'
+                    ? 'bg-white border-2 border-primary-600 shadow-xl shadow-primary-600/10 ring-1 ring-primary-600/10'
+                    : plan.name === 'Empresarial'
+                      ? 'bg-gradient-to-b from-slate-50 to-amber-50/30 border border-amber-200 shadow-md'
+                      : 'bg-white border border-gray-200 shadow-sm'
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-accent-500 text-gray-900 text-xs font-bold rounded-full shadow-md shadow-accent-500/20">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-primary-600 text-white text-xs font-bold rounded-full shadow-md shadow-primary-600/20">
                     Más popular
+                  </div>
+                )}
+                {plan.name === 'Empresarial' && !plan.popular && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-amber-500 text-amber-900 text-xs font-bold rounded-full shadow-md shadow-amber-500/20">
+                    Premium
                   </div>
                 )}
 
@@ -276,14 +283,14 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mb-8">
-                  <span className="text-5xl font-extrabold text-gray-900 tracking-tight">Q{plan.price}</span>
+                  <span className={`text-5xl font-extrabold tracking-tight ${plan.popular ? 'text-primary-700' : plan.name === 'Empresarial' ? 'text-amber-700' : 'text-gray-900'}`}>Q{plan.price}</span>
                   <span className="text-gray-400 font-medium">/mes</span>
                 </div>
 
                 <ul className="space-y-3.5 mb-8 flex-1">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-3 text-sm text-gray-600">
-                      <CheckCircle2 className="w-5 h-5 text-primary-700 mt-0.5 flex-shrink-0" />
+                      <CheckCircle2 className={`w-5 h-5 mt-0.5 flex-shrink-0 ${plan.popular ? 'text-primary-600' : plan.name === 'Empresarial' ? 'text-amber-500' : 'text-gray-400'}`} />
                       <span>{f}</span>
                     </li>
                   ))}
@@ -292,7 +299,7 @@ export default function LandingPage() {
                 <Link to="/register">
                   <Button
                     variant={plan.popular ? 'primary' : 'outline'}
-                    className={`w-full font-semibold ${plan.popular ? 'shadow-lg shadow-primary-700/20' : ''}`}
+                    className={`w-full font-semibold ${plan.popular ? 'bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-600/20' : plan.name === 'Empresarial' ? 'border-amber-400 text-amber-700 hover:bg-amber-50' : ''}`}
                     size="lg"
                   >
                     {plan.cta}
@@ -352,14 +359,17 @@ export default function LandingPage() {
               <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
                 ¿Listo para simplificar su contabilidad?
               </h2>
-              <p className="text-primary-200 mb-10 max-w-xl mx-auto text-lg leading-relaxed">
+              <p className="text-primary-200 mb-2 max-w-xl mx-auto text-lg leading-relaxed">
                 Todos los planes incluyen 14 días de prueba gratis. Sin tarjeta de crédito, cancele cuando quiera.
+              </p>
+              <p className="text-primary-400/60 text-sm mb-10">
+                ContaPro es parte de <span className="text-white font-semibold">TotalAppGT</span> — soluciones SaaS para Guatemala
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/register">
                   <Button
                     size="lg"
-                    className="bg-white text-primary-900 hover:bg-gray-100 font-bold px-10 py-5 text-lg shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                    className="bg-white text-primary-900 font-bold px-10 py-5 text-lg shadow-xl hover:bg-gray-100 hover:text-primary-900 hover:-translate-y-0.5 transition-all duration-300"
                   >
                     Crear cuenta gratis <ArrowRight className="w-5 h-5" />
                   </Button>
@@ -390,7 +400,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold text-white tracking-tight">ContaPro</span>
               </Link>
               <p className="text-sm text-gray-500 leading-relaxed mb-6">
-                Contabilidad profesional para Guatemala. Simplifique su gestión fiscal con la plataforma líder del país.
+                Contabilidad profesional para Guatemala. ContaPro es parte de <span className="text-white font-medium">TotalAppGT</span>, plataforma de soluciones SaaS.
               </p>
               <div className="flex items-center gap-5 text-xs">
                 <span className="text-gray-600 hover:text-gray-400 transition-colors cursor-pointer">Facebook</span>
