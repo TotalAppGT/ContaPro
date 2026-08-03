@@ -57,19 +57,20 @@ router.post('/telefono', async (req: Request, res: Response) => {
 // {{2}} se inserta en: "...pendiente en la plataforma de {{2}}."
 // Formato estandar ContaPro para todos los tipos de mensaje
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
+  const firma = '\n\n*ContaPro* \u2014 Sistema Contable Guatemala';
   switch (tipo) {
     case 'vinculacion':
-      return `*ContaPro*. Su numero de WhatsApp ha sido vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.`;
+      return `Su numero de WhatsApp ha sido vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.${firma}`;
     case 'iva':
-      return `*ContaPro*. Declaracion de IVA ${datos.periodo || 'pendiente'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento para evitar multas.`;
+      return `Declaracion de IVA ${datos.periodo || 'pendiente'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento para evitar multas.${firma}`;
     case 'vencimiento':
-      return `*ContaPro*. Su plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos del sistema contable.`;
+      return `Su plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos del sistema contable.${firma}`;
     case 'sat':
-      return `*ContaPro*. Tiene obligaciones tributarias pendientes ante la SAT. Revise y presente sus declaraciones desde el panel fiscal.`;
+      return `Tiene obligaciones tributarias pendientes ante la SAT. Revise y presente sus declaraciones desde el panel fiscal.${firma}`;
     case 'bienvenida':
-      return `*ContaPro* \u2014 Sistema Contable para Guatemala. Su cuenta esta activa. Acceda a su panel para empezar a gestionar su contabilidad.`;
+      return `Su cuenta esta activa. Acceda a su panel para empezar a gestionar su contabilidad.${firma}`;
     default:
-      return `*ContaPro* \u2014 Sistema Contable para Guatemala. Tiene una notificacion pendiente en su panel.`;
+      return `Tiene una notificacion pendiente en su panel.${firma}`;
   }
 }
 
