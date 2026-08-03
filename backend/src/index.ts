@@ -19,6 +19,7 @@ import usersRoutes from './routes/users';
 import notificacionesRoutes from './routes/notificaciones';
 import whatsappRoutes from './routes/whatsapp';
 import { seedMasterTenant } from './services/seedMaster';
+import { startAlertScheduler } from './services/alertScheduler';
 import fs from 'fs';
 import path from 'path';
 import pool from './db/pool';
@@ -103,6 +104,7 @@ async function startup() {
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_dia VARCHAR(2) DEFAULT '1'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS nombre_whatsapp VARCHAR(100)");
+    await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ultima_alerta DATE");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS whatsapp_messages (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -126,6 +128,7 @@ async function startup() {
   app.listen(PORT, async () => {
     console.log(`ContaPro corriendo en puerto ${PORT}`);
     await seedMasterTenant();
+    startAlertScheduler();
   });
 }
 
