@@ -57,22 +57,27 @@ router.post('/telefono', async (req: Request, res: Response) => {
 // {{2}} se inserta en: "...pendiente en la plataforma de {{2}}."
 // Formato estandar ContaPro para todos los tipos de mensaje
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
-  const titulo = '*ContaPro* \u2014 ';
-  const firma = '\n\n*ContaPro* \u2014 Sistema Contable Guatemala';
+  const titulo = '*ContaPro*';
+  const firma = '\n\u2014 *ContaPro* \u2022 Sistema Contable Guatemala';
+
+  const fmt = (v: any, d = 2) => {
+    const n = parseFloat(v) || 0;
+    return `Q${n.toLocaleString('es-GT', { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+  };
 
   switch (tipo) {
     case 'vinculacion':
-      return `${titulo}Vinculacion Exitosa\n\nSu numero de WhatsApp ha sido vinculado correctamente.\nAhora recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.${firma}`;
+      return `${titulo} \u2014 Vinculacion Exitosa\u000a\u000aSu numero de WhatsApp ha sido vinculado correctamente.\u000aA partir de ahora recibira alertas fiscales, vencimientos y recordatorios SAT.${firma}`;
     case 'iva':
-      return `${titulo}Alerta Fiscal\n\nPeriodo: ${datos.periodo || 'pendiente'}\nMonto IVA: Q${(datos.monto || 0).toFixed(2)}\nAccion: Presente declaracion SAT-2237 antes del vencimiento para evitar multas e intereses.${firma}`;
+      return `${titulo} \u2014 Alerta Fiscal\u000a\u000a\u2022 Periodo: ${datos.periodo || 'pendiente'}\u000a\u2022 IVA a declarar: ${fmt(datos.monto)}\u000a\u2022 Accion: Presente SAT-2237 antes del vencimiento.${firma}`;
     case 'vencimiento':
-      return `${titulo}Renovacion de Suscripcion\n\nPlan: ${datos.plan || 'actual'}\nVence en: ${datos.dias || 'pocos'} dias\nAccion: Renueve su plan para mantener acceso a todos los modulos del sistema.${firma}`;
+      return `${titulo} \u2014 Renovacion\u000a\u000a\u2022 Plan: ${datos.plan || 'actual'}\u000a\u2022 Vence en: ${datos.dias || 'pocos'} dias\u000a\u2022 Accion: Renueve para mantener acceso.${firma}`;
     case 'sat':
-      return `${titulo}Obligaciones Pendientes\n\nEstado: Declaraciones SAT sin presentar\nAccion: Revise y presente sus declaraciones tributarias desde el panel fiscal para mantenerse al dia.${firma}`;
+      return `${titulo} \u2014 Obligaciones SAT\u000a\u000a\u2022 Estado: Declaraciones pendientes\u000a\u2022 Accion: Revise y presente desde su panel fiscal.${firma}`;
     case 'bienvenida':
-      return `${titulo}Bienvenido\n\nSu cuenta esta activa y lista para usar.\nAcceda a su panel para empezar a gestionar su contabilidad, declaraciones y reportes fiscales.${firma}`;
+      return `${titulo} \u2014 Bienvenido\u000a\u000aSu cuenta esta activa y lista para usar.\u000aAcceda a su panel contable para gestionar su negocio.${firma}`;
     default:
-      return `${titulo}Notificacion\n\nTiene informacion pendiente en su panel contable.\nAcceda para revisar sus ultimos movimientos y alertas.${firma}`;
+      return `${titulo} \u2014 Notificacion\u000a\u000aTiene informacion pendiente en su panel.${firma}`;
   }
 }
 
