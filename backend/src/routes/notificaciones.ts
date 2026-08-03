@@ -93,10 +93,12 @@ router.post('/test', async (req: Request, res: Response) => {
       [tenantId]
     );
     const tInfo = info.rows[0] || {};
-    const nombreDueno = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || 'ContaPro';
+    // {{1}} = "ContaPro" para branding. Nombre del cliente va en {{2}}
+    const nombrePlantilla = 'ContaPro';
+    const nombreCliente = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || '';
 
-    const mensaje = textoAlerta('vinculacion', nombreDueno);
-    const enviado = await enviarPlantillaAlerta(t.telefono, nombreDueno, mensaje);
+    const mensaje = textoAlerta('vinculacion', nombreCliente);
+    const enviado = await enviarPlantillaAlerta(t.telefono, nombrePlantilla, mensaje);
 
     if (enviado.ok) {
       res.json({ message: `Mensaje de prueba enviado a ${t.telefono} usando la plantilla aprobada` });
@@ -120,7 +122,7 @@ router.post('/test', async (req: Request, res: Response) => {
 router.post('/enviar', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
-    const nombreUsuario = req.body?.nombre || req.user!.name || '';
+    const nombreCliente = req.body?.nombre || req.user!.name || '';
     const { tipo, periodo, monto, plan, dias } = req.body || {};
     const result = await pool.query('SELECT telefono FROM tenants WHERE id = $1', [tenantId]);
     const t = result.rows[0];
@@ -136,10 +138,11 @@ router.post('/enviar', async (req: Request, res: Response) => {
       [tenantId]
     );
     const tInfo = info.rows[0] || {};
-    const nombreDueno = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || 'ContaPro';
+    const nombrePlantilla = 'ContaPro';
+    const nombreClienteFinal = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || nombreCliente;
 
-    const mensaje = textoAlerta(tipo || 'general', nombreDueno, { periodo, monto: parseFloat(monto) || 0, plan, dias });
-    const enviado = await enviarPlantillaAlerta(t.telefono, nombreDueno, mensaje);
+    const mensaje = textoAlerta(tipo || 'general', nombreClienteFinal, { periodo, monto: parseFloat(monto) || 0, plan, dias });
+    const enviado = await enviarPlantillaAlerta(t.telefono, nombrePlantilla, mensaje);
 
     if (enviado.ok) {
       res.json({ message: `Alerta "${tipo}" enviada a ${t.telefono}`, texto: mensaje });
