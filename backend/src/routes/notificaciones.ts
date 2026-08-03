@@ -128,7 +128,24 @@ router.post('/telefono', async (req: Request, res: Response) => {
   }
 });
 
-// Enviar mensaje de prueba usando la plantilla aprobada
+// Plantillas de texto para el parametro {{1}} de alerta_totalappgt
+// La plantilla de Meta tiene texto fijo; {{1}} lo personalizamos segun el tipo de alerta
+function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
+  switch (tipo) {
+    case 'iva':
+      return `ContaPro: ${nombre}, su IVA de ${datos.periodo || 'este mes'} (Q${(datos.monto || 0).toFixed(2)}) vence pronto. Presente SAT-2237. contapro.totalappgt.online`;
+    case 'vencimiento':
+      return `ContaPro: ${nombre}, su plan ${datos.plan || 'ContaPro'} vence en ${datos.dias || 'pocos'} dias. Renueve en su panel.`;
+    case 'sat':
+      return `ContaPro: ${nombre}, tiene obligaciones SAT pendientes. Revise sus declaraciones. contapro.totalappgt.online`;
+    case 'bienvenida':
+      return `ContaPro: bienvenido(a) ${nombre}, su cuenta esta activa. Acceda a su panel contable: contapro.totalappgt.online`;
+    default:
+      return `ContaPro: ${nombre}, tiene notificaciones pendientes en su panel contable. contapro.totalappgt.online`;
+  }
+}
+
+// Enviar mensaje de prueba con la plantilla aprobada y texto personalizado ContaPro
 router.post('/test', async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
@@ -141,7 +158,7 @@ router.post('/test', async (req: Request, res: Response) => {
       return;
     }
 
-    const enviado = await enviarPlantillaAlerta(t.telefono, nombreUsuario);
+    const enviado = await enviarPlantillaAlerta(t.telefono, textoAlerta('bienvenida', nombreUsuario));
 
     if (enviado.ok) {
       res.json({ message: `Mensaje de prueba enviado a ${t.telefono} usando la plantilla aprobada` });
@@ -155,6 +172,33 @@ router.post('/test', async (req: Request, res: Response) => {
           telefono: t.telefono,
         }
       });
+    }
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Enviar alerta personalizada de ContaPro (IVA, SAT, vencimiento)
+router.post('/enviar', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const nombreUsuario = req.user!.name || '';
+    const { tipo, periodo, monto, plan, dias } = req.body || {};
+    const result = await pool.query('SELECT telefono FROM tenants WHERE id = $1', [tenantId]);
+    const t = result.rows[0];
+
+    if (!t?.telefono) {
+      res.status(400).json({ error: 'No hay teléfono registrado. Guárdelo primero.' });
+      return;
+    }
+
+    const msg = textoAlerta(tipo || 'general', nombreUsuario, { periodo, monto: parseFloat(monto) || 0, plan, dias });
+    const enviado = await enviarPlantillaAlerta(t.telefono, msg);
+
+    if (enviado.ok) {
+      res.json({ message: `Alerta "${tipo}" enviada a ${t.telefono}`, texto: msg });
+    } else {
+      res.status(500).json({ error: 'Error al enviar: ' + (enviado.error || 'Desconocido') });
     }
   } catch (e: any) {
     res.status(500).json({ error: e.message });
