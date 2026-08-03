@@ -37,7 +37,14 @@ function numeroLimpio(telefono: string): string {
 }
 
 function truncar(texto: string, max: number = 750): string {
-  const t = String(texto || '').replace(/[\n\r\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  const t = String(texto || '').replace(/\t/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  if (t.length <= max) return t;
+  return t.slice(0, max - 3) + '...';
+}
+
+// Versión que respeta saltos de línea para mensajes estructurados
+function truncarMultilinea(texto: string, max: number = 1024): string {
+  const t = String(texto || '').replace(/\t/g, '    ').trim();
   if (t.length <= max) return t;
   return t.slice(0, max - 3) + '...';
 }
@@ -57,7 +64,7 @@ export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: str
         type: 'body',
         parameters: [
           { type: 'text', text: (nombreUsuario || ' ').slice(0, 80) },
-          { type: 'text', text: truncar(mensaje || '', 750) },
+          { type: 'text', text: truncarMultilinea(mensaje || '', 1024) },
         ],
       }],
     },
