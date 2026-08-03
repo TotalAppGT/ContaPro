@@ -57,20 +57,22 @@ router.post('/telefono', async (req: Request, res: Response) => {
 // {{2}} se inserta en: "...pendiente en la plataforma de {{2}}."
 // Formato estandar ContaPro para todos los tipos de mensaje
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
+  const titulo = '*ContaPro* \u2014 ';
   const firma = '\n\n*ContaPro* \u2014 Sistema Contable Guatemala';
+
   switch (tipo) {
     case 'vinculacion':
-      return `Su numero de WhatsApp ha sido vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.${firma}`;
+      return `${titulo}Vinculacion Exitosa\n\nSu numero de WhatsApp ha sido vinculado correctamente.\nAhora recibira alertas fiscales, vencimientos y recordatorios SAT por este medio.${firma}`;
     case 'iva':
-      return `Declaracion de IVA ${datos.periodo || 'pendiente'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento para evitar multas.${firma}`;
+      return `${titulo}Alerta Fiscal\n\nPeriodo: ${datos.periodo || 'pendiente'}\nMonto IVA: Q${(datos.monto || 0).toFixed(2)}\nAccion: Presente declaracion SAT-2237 antes del vencimiento para evitar multas e intereses.${firma}`;
     case 'vencimiento':
-      return `Su plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos del sistema contable.${firma}`;
+      return `${titulo}Renovacion de Suscripcion\n\nPlan: ${datos.plan || 'actual'}\nVence en: ${datos.dias || 'pocos'} dias\nAccion: Renueve su plan para mantener acceso a todos los modulos del sistema.${firma}`;
     case 'sat':
-      return `Tiene obligaciones tributarias pendientes ante la SAT. Revise y presente sus declaraciones desde el panel fiscal.${firma}`;
+      return `${titulo}Obligaciones Pendientes\n\nEstado: Declaraciones SAT sin presentar\nAccion: Revise y presente sus declaraciones tributarias desde el panel fiscal para mantenerse al dia.${firma}`;
     case 'bienvenida':
-      return `Su cuenta esta activa. Acceda a su panel para empezar a gestionar su contabilidad.${firma}`;
+      return `${titulo}Bienvenido\n\nSu cuenta esta activa y lista para usar.\nAcceda a su panel para empezar a gestionar su contabilidad, declaraciones y reportes fiscales.${firma}`;
     default:
-      return `Tiene una notificacion pendiente en su panel.${firma}`;
+      return `${titulo}Notificacion\n\nTiene informacion pendiente en su panel contable.\nAcceda para revisar sus ultimos movimientos y alertas.${firma}`;
   }
 }
 
