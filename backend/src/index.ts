@@ -95,6 +95,22 @@ async function startup() {
     // Agregar columnas nuevas si no existen
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_dia VARCHAR(2) DEFAULT '1'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
+    // Tabla de mensajes WhatsApp para multi-sistema routing
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS whatsapp_messages (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+        wa_id VARCHAR(20) NOT NULL,
+        direction VARCHAR(10) NOT NULL CHECK (direction IN ('inbound','outbound')),
+        body TEXT,
+        wamid VARCHAR(100),
+        meta_timestamp VARCHAR(20),
+        status VARCHAR(20) DEFAULT 'received',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_wa_msgs_tenant ON whatsapp_messages (tenant_id);
+      CREATE INDEX IF NOT EXISTS idx_wa_msgs_waid ON whatsapp_messages (wa_id);
+    `);
   } catch (e: any) {
     console.error('Error schema:', e.message);
   }
