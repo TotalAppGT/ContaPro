@@ -94,11 +94,15 @@ async function startup() {
       await pool.query(sql);
       console.log('Schema aplicado correctamente.');
     }
-    // Agregar columnas nuevas si no existen
+  } catch (e: any) {
+    console.error('Error schema:', e.message);
+  }
+
+  // Migraciones idempotentes (corren siempre, no dependen del schema.sql)
+  try {
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_dia VARCHAR(2) DEFAULT '1'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS nombre_whatsapp VARCHAR(100)");
-    // Tabla de mensajes WhatsApp para multi-sistema routing
     await pool.query(`
       CREATE TABLE IF NOT EXISTS whatsapp_messages (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -114,8 +118,9 @@ async function startup() {
       CREATE INDEX IF NOT EXISTS idx_wa_msgs_tenant ON whatsapp_messages (tenant_id);
       CREATE INDEX IF NOT EXISTS idx_wa_msgs_waid ON whatsapp_messages (wa_id);
     `);
+    console.log('Migraciones aplicadas correctamente.');
   } catch (e: any) {
-    console.error('Error schema:', e.message);
+    console.error('Error migracion:', e.message);
   }
 
   app.listen(PORT, async () => {
