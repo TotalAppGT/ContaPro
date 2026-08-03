@@ -94,7 +94,7 @@ router.post('/test', async (req: Request, res: Response) => {
     );
     const tInfo = info.rows[0] || {};
     // {{1}} = "ContaPro" para branding. Nombre del cliente va en {{2}}
-    const nombrePlantilla = 'ContaPro';
+    const nombrePlantilla = '';
     const nombreCliente = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || '';
 
     const mensaje = textoAlerta('vinculacion', nombreCliente);
@@ -138,7 +138,7 @@ router.post('/enviar', async (req: Request, res: Response) => {
       [tenantId]
     );
     const tInfo = info.rows[0] || {};
-    const nombrePlantilla = 'ContaPro';
+    const nombrePlantilla = '';
     const nombreClienteFinal = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || nombreCliente;
 
     const mensaje = textoAlerta(tipo || 'general', nombreClienteFinal, { periodo, monto: parseFloat(monto) || 0, plan, dias });
