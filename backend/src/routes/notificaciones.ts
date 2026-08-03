@@ -6,91 +6,17 @@ const router = Router();
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'licitrackgt2026';
 
-// Webhook de Meta: verificación (GET)
+// Webhook de Meta: verificación (GET) — legacy, el proxy universal maneja esto ahora
 router.get('/webhook', (req: Request, res: Response) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('[WHATSAPP] Webhook verificado');
+    console.log('[WHATSAPP] Webhook verificado (legacy)');
     res.status(200).send(challenge);
   } else {
     res.sendStatus(403);
-  }
-});
-
-// Webhook de Meta: mensajes entrantes y status (POST)
-// Reenviado por el proxy universal webhook-meta-production-bb93
-// Cada SaaS identifica a sus clientes por wa_id (from) comparado con tenants.telefono
-router.post('/webhook', async (req: Request, res: Response) => {
-  res.sendStatus(200); // Responder rápido a Meta/proxy, procesar después
-
-  try {
-    const entries = req.body?.entry || [];
-    const ourPhoneId = process.env.WHATSAPP_PHONE_ID || '';
-
-    for (const entry of entries) {
-      const changes = entry.changes || [];
-      for (const change of changes) {
-        const value = change.value || {};
-
-        // Verificar que el evento es para nuestro número (no otro SaaS con mismo proxy)
-        const phoneNumberId = value.metadata?.phone_number_id;
-        if (ourPhoneId && phoneNumberId !== ourPhoneId) continue;
-
-        // Procesar mensajes entrantes
-        const messages = value.messages || [];
-        for (const msg of messages) {
-          const waId = (msg.from || '').replace(/\D/g, '');
-          if (!waId) continue;
-
-          const tenant = await pool.query(
-            'SELECT id, nombre FROM tenants WHERE telefono = $1 AND estado != $2',
-            [waId, 'cancelado']
-          );
-
-          if (tenant.rowCount === 0) {
-            console.log(`[WHATSAPP] wa_id ${waId} no es cliente ContaPro, ignorado`);
-            continue;
-          }
-
-          const t = tenant.rows[0];
-
-          await pool.query(
-            `INSERT INTO whatsapp_messages (tenant_id, wa_id, direction, body, wamid, meta_timestamp)
-             VALUES ($1,$2,'inbound',$3,$4,$5)`,
-            [t.id, waId, msg.text?.body || '', msg.id || null, msg.timestamp || null]
-          );
-
-          console.log(`[WHATSAPP] Recibido de cliente ContaPro (${t.nombre}) - wa_id=${waId}`);
-
-          // Auto-respuesta profesional de ContaPro (solo primera vez por sesión)
-          const reciente = await pool.query(
-            `SELECT id FROM whatsapp_messages
-             WHERE wa_id = $1 AND direction = 'inbound' AND created_at > NOW() - INTERVAL '6 hours'
-             LIMIT 1`,
-            [waId]
-          );
-          if (reciente.rowCount === 0) {
-            const respuesta = `Hola, gracias por escribir a *ContaPro*.\n\nSomos el sistema contable para Guatemala. Si necesitas asistencia, tu contador te atenderá pronto.\n\nPuedes consultar tus declaraciones en contapro.totalappgt.online\n\n*ContaPro Guatemala*`;
-            await enviarWhatsApp(waId, respuesta);
-            console.log(`[WHATSAPP] Auto-respuesta enviada a ${waId}`);
-          }
-        }
-
-        // Procesar actualizaciones de estado (entregado, leído, etc.)
-        const statuses = value.statuses || [];
-        for (const st of statuses) {
-          await pool.query(
-            `UPDATE whatsapp_messages SET status = $1 WHERE wamid = $2`,
-            [st.status || 'unknown', st.id || '']
-          );
-        }
-      }
-    }
-  } catch (e: any) {
-    console.error('[WHATSAPP] Error procesando webhook:', e.message);
   }
 });
 
@@ -128,8 +54,8 @@ router.post('/telefono', async (req: Request, res: Response) => {
   }
 });
 
-// Plantillas de texto para el parametro {{1}} de alerta_totalappgt
-// La plantilla de Meta tiene texto fijo; {{1}} lo personalizamos segun el tipo de alerta
+// Plantillas de texto para el parametro {{2}} de notificacion_sistema_ia
+// {{1}} = nombre del usuario, {{2}} = mensaje personalizado con marca ContaPro
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
   switch (tipo) {
     case 'iva':
@@ -158,7 +84,8 @@ router.post('/test', async (req: Request, res: Response) => {
       return;
     }
 
-    const enviado = await enviarPlantillaAlerta(t.telefono, textoAlerta('bienvenida', nombreUsuario));
+    const mensaje = textoAlerta('bienvenida', nombreUsuario);
+    const enviado = await enviarPlantillaAlerta(t.telefono, nombreUsuario, mensaje);
 
     if (enviado.ok) {
       res.json({ message: `Mensaje de prueba enviado a ${t.telefono} usando la plantilla aprobada` });
@@ -168,7 +95,7 @@ router.post('/test', async (req: Request, res: Response) => {
         debug: {
           phoneId: process.env.WHATSAPP_PHONE_ID ? 'Configurado' : 'NO CONFIGURADO',
           token: process.env.WHATSAPP_TOKEN ? 'Configurado' : 'NO CONFIGURADO',
-          template: 'alerta_totalappgt (es_MX)',
+          template: 'notificacion_sistema_ia (es_MX)',
           telefono: t.telefono,
         }
       });
@@ -192,11 +119,11 @@ router.post('/enviar', async (req: Request, res: Response) => {
       return;
     }
 
-    const msg = textoAlerta(tipo || 'general', nombreUsuario, { periodo, monto: parseFloat(monto) || 0, plan, dias });
-    const enviado = await enviarPlantillaAlerta(t.telefono, msg);
+    const mensaje = textoAlerta(tipo || 'general', nombreUsuario, { periodo, monto: parseFloat(monto) || 0, plan, dias });
+    const enviado = await enviarPlantillaAlerta(t.telefono, nombreUsuario, mensaje);
 
     if (enviado.ok) {
-      res.json({ message: `Alerta "${tipo}" enviada a ${t.telefono}`, texto: msg });
+      res.json({ message: `Alerta "${tipo}" enviada a ${t.telefono}`, texto: mensaje });
     } else {
       res.status(500).json({ error: 'Error al enviar: ' + (enviado.error || 'Desconocido') });
     }

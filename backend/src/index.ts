@@ -17,6 +17,7 @@ import comprasRoutes from './routes/compras';
 import clientesRoutes from './routes/clientes';
 import usersRoutes from './routes/users';
 import notificacionesRoutes from './routes/notificaciones';
+import whatsappRoutes from './routes/whatsapp';
 import { seedMasterTenant } from './services/seedMaster';
 import fs from 'fs';
 import path from 'path';
@@ -43,7 +44,7 @@ app.get('/api/health', (req, res) => {
 
 // --- Rutas API (con auth selectivo) ---
 
-const PUBLIC_API = ['/auth/login', '/auth/register', '/auth/firebase', '/auth/firebase-register', '/subscriptions/plans', '/subscriptions/webhook', '/subscriptions/simulate-payment', '/notificaciones/webhook', '/health'];
+const PUBLIC_API = ['/auth/login', '/auth/register', '/auth/firebase', '/auth/firebase-register', '/subscriptions/plans', '/subscriptions/webhook', '/subscriptions/simulate-payment', '/notificaciones/webhook', '/whatsapp/webhook', '/health'];
 app.use('/api', (req, res, next) => {
   if (PUBLIC_API.some(p => p === req.path || (req.path.startsWith(p) && p.includes('webhook')))) {
     return next();
@@ -63,6 +64,7 @@ app.use('/api/compras', comprasRoutes);
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/notificaciones', notificacionesRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 // --- Frontend estático (sin auth) ---
 

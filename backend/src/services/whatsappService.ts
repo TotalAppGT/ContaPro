@@ -1,8 +1,8 @@
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || '';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 
-// Plantilla aprobada en Meta (es_MX, 1 variable: nombre del usuario)
-const TEMPLATE_NOMBRE = 'alerta_totalappgt';
+// Plantilla aprobada en Meta — 2 parámetros: {{1}} = nombre del usuario, {{2}} = mensaje
+const TEMPLATE_NOMBRE = 'notificacion_sistema_ia';
 const TEMPLATE_LANG = 'es_MX';
 
 async function postWhatsApp(payload: any): Promise<{ ok: boolean; error?: string; raw?: any }> {
@@ -36,9 +36,15 @@ function numeroLimpio(telefono: string): string {
   return String(telefono || '').replace(/[^0-9]/g, '');
 }
 
-// Envía la plantilla aprobada: funciona aunque el usuario nunca haya escrito primero.
-// La variable {{1}} es el nombre del usuario.
-export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: string): Promise<{ ok: boolean; error?: string }> {
+function truncar(texto: string, max: number = 750): string {
+  const t = String(texto || '').replace(/[\n\r\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  if (t.length <= max) return t;
+  return t.slice(0, max - 3) + '...';
+}
+
+// Envía la plantilla aprobada con 2 parámetros: nombre del usuario + mensaje personalizado
+// Funciona sin que el destinatario haya escrito primero (plantilla aprobada en producción)
+export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: string, mensaje: string): Promise<{ ok: boolean; error?: string }> {
   return postWhatsApp({
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -49,7 +55,10 @@ export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: str
       language: { code: TEMPLATE_LANG },
       components: [{
         type: 'body',
-        parameters: [{ type: 'text', text: nombreUsuario || '' }],
+        parameters: [
+          { type: 'text', text: truncar(nombreUsuario || '', 80) },
+          { type: 'text', text: truncar(mensaje || '', 750) },
+        ],
       }],
     },
   });
@@ -62,12 +71,11 @@ export async function enviarWhatsApp(telefono: string, mensaje: string): Promise
     recipient_type: 'individual',
     to: numeroLimpio(telefono),
     type: 'text',
-    text: { preview_url: false, body: mensaje },
+    text: { preview_url: false, body: truncar(mensaje, 1600) },
   });
 }
 
-// Documento PDF: se envía como adjunto. Requiere ventana de 24h abierta (usuario escribió antes)
-// o una plantilla con header tipo document. link debe ser una URL pública HTTPS.
+// Documento PDF: se envía como adjunto. Requiere ventana de 24h abierta
 export async function enviarWhatsAppDocumento(telefono: string, linkPdf: string, nombreArchivo: string, caption?: string): Promise<{ ok: boolean; error?: string }> {
   return postWhatsApp({
     messaging_product: 'whatsapp',
@@ -77,15 +85,17 @@ export async function enviarWhatsAppDocumento(telefono: string, linkPdf: string,
     document: {
       link: linkPdf,
       filename: nombreArchivo || 'documento.pdf',
-      caption: caption || '',
+      caption: truncar(caption || '', 500),
     },
   });
 }
 
 export async function enviarAlertaIVA(telefono: string, nombreUsuario: string, periodo: string, monto: number): Promise<{ ok: boolean; error?: string }> {
-  return enviarPlantillaAlerta(telefono, nombreUsuario);
+  return enviarPlantillaAlerta(telefono, nombreUsuario,
+    `ContaPro: su IVA de ${periodo} (Q${monto.toFixed(2)}) vence pronto. Presente SAT-2237. contapro.totalappgt.online`);
 }
 
 export async function enviarAlertaVencimiento(telefono: string, nombreUsuario: string, plan: string, dias: number): Promise<{ ok: boolean; error?: string }> {
-  return enviarPlantillaAlerta(telefono, nombreUsuario);
+  return enviarPlantillaAlerta(telefono, nombreUsuario,
+    `ContaPro: su plan ${plan} vence en ${dias} dias. Renueve en su panel: contapro.totalappgt.online`);
 }
