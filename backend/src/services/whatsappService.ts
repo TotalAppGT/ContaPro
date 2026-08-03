@@ -56,7 +56,7 @@ export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: str
       components: [{
         type: 'body',
         parameters: [
-          { type: 'text', text: truncar(nombreUsuario || '', 80) },
+          { type: 'text', text: (nombreUsuario || ' ').slice(0, 80) },
           { type: 'text', text: truncar(mensaje || '', 750) },
         ],
       }],
