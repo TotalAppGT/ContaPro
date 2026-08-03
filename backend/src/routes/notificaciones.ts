@@ -55,19 +55,20 @@ router.post('/telefono', async (req: Request, res: Response) => {
 });
 
 // Plantillas de texto para el parametro {{2}} de notificacion_sistema_ia
-// {{1}} = nombre del usuario, {{2}} = mensaje personalizado con marca ContaPro
+// {{1}} = nombre, {{2}} = mensaje personalizado con marca ContaPro
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
+  const n = nombre || 'Usuario';
   switch (tipo) {
     case 'iva':
-      return `ContaPro: ${nombre}, su IVA de ${datos.periodo || 'este mes'} (Q${(datos.monto || 0).toFixed(2)}) vence pronto. Presente SAT-2237. contapro.totalappgt.online`;
+      return `ContaPro | ${n}, IVA ${datos.periodo || 'este mes'}: Q${(datos.monto || 0).toFixed(2)}. Presente SAT-2237 antes del vencimiento.`;
     case 'vencimiento':
-      return `ContaPro: ${nombre}, su plan ${datos.plan || 'ContaPro'} vence en ${datos.dias || 'pocos'} dias. Renueve en su panel.`;
+      return `ContaPro | ${n}, plan ${datos.plan || 'actual'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso.`;
     case 'sat':
-      return `ContaPro: ${nombre}, tiene obligaciones SAT pendientes. Revise sus declaraciones. contapro.totalappgt.online`;
+      return `ContaPro | ${n}, obligaciones SAT pendientes. Revise declaraciones en su panel.`;
     case 'bienvenida':
-      return `ContaPro: bienvenido(a) ${nombre}, su cuenta esta activa. Acceda a su panel contable: contapro.totalappgt.online`;
+      return `ContaPro | Bienvenido ${n}. Su cuenta esta activa. Acceda a contapro.totalappgt.online`;
     default:
-      return `ContaPro: ${nombre}, tiene notificaciones pendientes en su panel contable. contapro.totalappgt.online`;
+      return `ContaPro | ${n}, notificacion pendiente en su panel.`;
   }
 }
 
