@@ -55,8 +55,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
           await pool.query(
             `INSERT INTO whatsapp_messages (tenant_id, wa_id, direction, body, wamid, meta_timestamp)
-             VALUES ($1,$2,'inbound',$3,$4,$5)
-             ON CONFLICT DO NOTHING`,
+             VALUES ($1,$2,'inbound',$3,$4,$5)`,
             [t.id, waId, body, msg.id || null, msg.timestamp || null]
           );
 
