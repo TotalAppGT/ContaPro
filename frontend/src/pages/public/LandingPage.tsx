@@ -360,10 +360,17 @@ export default function LandingPage() {
                 ¿Listo para simplificar su contabilidad?
               </h2>
               <p className="text-primary-200 mb-2 max-w-xl mx-auto text-lg leading-relaxed">
-                Todos los planes incluyen 14 días de prueba gratis. Sin tarjeta de crédito, cancele cuando quiera.
+                Todos los planes incluyen 14 días de prueba gratis. Sin tarjeta de crédito.
               </p>
-              <p className="text-primary-400/60 text-sm mb-10">
-                ContaPro es parte de <span className="text-white font-semibold">TotalAppGT</span> — soluciones SaaS para Guatemala
+              <div className="inline-flex items-center gap-3 mb-10 bg-white/5 backdrop-blur-sm rounded-xl px-6 py-3 border border-white/10">
+                <div className="w-10 h-10 rounded-lg bg-white text-primary-900 font-black text-sm flex items-center justify-center flex-shrink-0">TA</div>
+                <div className="text-left">
+                  <p className="text-white font-bold text-sm">TotalAppGT</p>
+                  <p className="text-primary-300/70 text-xs">Soluciones inteligentes</p>
+                </div>
+              </div>
+              <p className="text-primary-400/70 text-xs mb-10 max-w-md mx-auto">
+                ContaPro es una marca de TotalAppGT. Tecnología guatemalteca para empresas que quieren estar un paso adelante.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/register">
@@ -395,12 +402,19 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-14">
             {/* Brand */}
             <div className="lg:col-span-1">
-              <Link to="/" className="inline-flex items-center gap-2.5 mb-5 group">
+              <Link to="/" className="inline-flex items-center gap-2.5 mb-4 group">
                 <img src="/logo.svg" alt="ContaPro" className="w-8 h-8 transition-transform group-hover:scale-105" />
                 <span className="text-xl font-bold text-white tracking-tight">ContaPro</span>
               </Link>
+              <div className="inline-flex items-center gap-2.5 mb-5 bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                <div className="w-7 h-7 rounded bg-white text-gray-900 font-black text-[10px] flex items-center justify-center flex-shrink-0">TA</div>
+                <div>
+                  <p className="text-white text-xs font-semibold leading-tight">TotalAppGT</p>
+                  <p className="text-gray-500 text-[10px] leading-tight">Soluciones inteligentes</p>
+                </div>
+              </div>
               <p className="text-sm text-gray-500 leading-relaxed mb-6">
-                Contabilidad profesional para Guatemala. ContaPro es parte de <span className="text-white font-medium">TotalAppGT</span>, plataforma de soluciones SaaS.
+                ContaPro es una marca de TotalAppGT. Tecnología guatemalteca para empresas que quieren estar un paso adelante.
               </p>
               <div className="flex items-center gap-5 text-xs">
                 <span className="text-gray-600 hover:text-gray-400 transition-colors cursor-pointer">Facebook</span>
