@@ -3,7 +3,7 @@ const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 
 // Plantilla aprobada en Meta — 2 variables: {{sistema}} y {{mensaje}}
 const TEMPLATE_NOMBRE = 'totalappgt_aviso';
-const TEMPLATE_LANG = 'es';
+const TEMPLATE_LANG = 'es_MX';
 
 async function postWhatsApp(payload: any): Promise<{ ok: boolean; error?: string; raw?: any }> {
   if (!WHATSAPP_PHONE_ID || !WHATSAPP_TOKEN) {
