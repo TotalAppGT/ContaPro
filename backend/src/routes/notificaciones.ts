@@ -54,10 +54,8 @@ router.post('/telefono', async (req: Request, res: Response) => {
   }
 });
 
-// {{2}} se inserta en: "...pendiente en la plataforma de {{2}}."
-// Formato estandar ContaPro para todos los tipos de mensaje
+// Mensajes para la plantilla totalappgt_aviso ({{sistema}} va en la plantilla)
 function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = {}): string {
-  const titulo = '*ContaPro*';
   const fmtQ = (v: any) => {
     const n = parseFloat(v) || 0;
     return `Q${n.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -65,17 +63,17 @@ function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = 
 
   switch (tipo) {
     case 'vinculacion':
-      return `${titulo} — Vinculacion Exitosa. Su numero de WhatsApp fue vinculado. Recibira alertas fiscales, vencimientos y recordatorios. Para desvincular, use la opcion en su panel. — ${titulo} • Sistema Contable Guatemala`;
+      return `Hola ${nombre}, su numero de WhatsApp fue vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios. Para desvincular, use la opcion en su panel.`;
     case 'iva':
-      return `${titulo} — Alerta Fiscal  |  Periodo: ${datos.periodo || 'pendiente'}  |  Impuesto: IVA  |  Monto a declarar: ${fmtQ(datos.monto)}  |  Formulario: SAT-2237  |  Accion: Presente antes del vencimiento para evitar multas.  |  contapro.totalappgt.online  |  — ${titulo} • Guatemala`;
+      return `Hola ${nombre}, alerta fiscal. Periodo: ${datos.periodo || 'pendiente'}  |  Impuesto: IVA  |  Monto a declarar: ${fmtQ(datos.monto)}  |  Formulario: SAT-2237  |  Presente antes del vencimiento para evitar multas.  |  contapro.totalappgt.online`;
     case 'vencimiento':
-      return `${titulo} — Renovacion  |  Plan: ${datos.plan || 'ContaPro'}  |  Vence en: ${datos.dias || 'pocos'} dias  |  Accion: Renueve para mantener acceso a todos los modulos.  |  contapro.totalappgt.online  |  — ${titulo} • Guatemala`;
+      return `Hola ${nombre}, su plan ${datos.plan || 'ContaPro'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos.  |  contapro.totalappgt.online`;
     case 'sat':
-      return `${titulo} — Obligaciones SAT  |  Estado: Declaraciones pendientes  |  Accion: Revise y presente sus impuestos desde el panel fiscal.  |  contapro.totalappgt.online  |  — ${titulo} • Guatemala`;
+      return `Hola ${nombre}, tiene obligaciones SAT pendientes. Revise y presente sus impuestos desde el panel fiscal.  |  contapro.totalappgt.online`;
     case 'bienvenida':
-      return `${titulo} — Bienvenido. Su cuenta contable esta activa. Modulos: Contabilidad, Ventas, Compras, SAT, Reportes. Acceda a contapro.totalappgt.online — ${titulo} • Guatemala`;
+      return `Hola ${nombre}, su cuenta contable esta activa. Modulos: Contabilidad, Ventas, Compras, SAT, Reportes. Acceda a contapro.totalappgt.online`;
     default:
-      return `${titulo} — Notificacion. Tiene informacion pendiente en su panel contable. Acceda para revisar. — ${titulo} • Guatemala`;
+      return `Hola ${nombre}, tiene informacion pendiente en su panel contable. Acceda para revisar.`;
   }
 }
 
@@ -96,22 +94,20 @@ router.post('/test', async (req: Request, res: Response) => {
       [tenantId]
     );
     const tInfo = info.rows[0] || {};
-    // {{1}} = "ContaPro" para branding. Nombre del cliente va en {{2}}
-    const nombrePlantilla = '\u{1F44B}';
     const nombreCliente = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || req.user!.name || '';
 
     const mensaje = textoAlerta('vinculacion', nombreCliente);
-    const enviado = await enviarPlantillaAlerta(t.telefono, nombrePlantilla, mensaje);
+    const enviado = await enviarPlantillaAlerta(t.telefono, 'ContaPro', mensaje);
 
     if (enviado.ok) {
-      res.json({ message: `Mensaje de prueba enviado a ${t.telefono} usando la plantilla aprobada` });
+      res.json({ message: `Mensaje de prueba enviado a ${t.telefono} usando la plantilla totalappgt_aviso` });
     } else {
       res.status(500).json({
         error: 'Error al enviar. Detalle: ' + (enviado.error || 'Desconocido'),
         debug: {
           phoneId: process.env.WHATSAPP_PHONE_ID ? 'Configurado' : 'NO CONFIGURADO',
           token: process.env.WHATSAPP_TOKEN ? 'Configurado' : 'NO CONFIGURADO',
-          template: 'notificacion_sistema_ia (es_MX)',
+          template: 'totalappgt_aviso (es)',
           telefono: t.telefono,
         }
       });
@@ -141,11 +137,10 @@ router.post('/enviar', async (req: Request, res: Response) => {
       [tenantId]
     );
     const tInfo = info.rows[0] || {};
-    const nombrePlantilla = '\u{1F44B}';
     const nombreClienteFinal = req.body?.nombre || tInfo.nombre_whatsapp || tInfo.nombre || nombreCliente;
 
     const mensaje = textoAlerta(tipo || 'general', nombreClienteFinal, { periodo, monto: parseFloat(monto) || 0, plan, dias });
-    const enviado = await enviarPlantillaAlerta(t.telefono, nombrePlantilla, mensaje);
+    const enviado = await enviarPlantillaAlerta(t.telefono, 'ContaPro', mensaje);
 
     if (enviado.ok) {
       res.json({ message: `Alerta "${tipo}" enviada a ${t.telefono}`, texto: mensaje });

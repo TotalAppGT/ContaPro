@@ -1,11 +1,11 @@
 import pool from '../db/pool';
 import { enviarPlantillaAlerta } from './whatsappService';
 
-// Texto de alerta fiscal automática
+// Texto de alerta fiscal automática ({{sistema}} ya va en la plantilla)
 function buildAlertMessage(nombre: string, periodo: string, ivaVentas: number, ivaCompras: number): string {
   const fmt = (v: number) => `Q${v.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const neto = ivaVentas - ivaCompras;
-  return `*ContaPro* — Alerta Fiscal  |  Periodo: ${periodo}  |  IVA Ventas: ${fmt(ivaVentas)}  |  IVA Compras: ${fmt(ivaCompras)}  |  IVA Neto a pagar: ${fmt(neto)}  |  Accion: Presente SAT-2237 antes del vencimiento.  |  — *ContaPro* • Guatemala`;
+  return `Hola ${nombre}, alerta fiscal. Periodo: ${periodo}  |  IVA Ventas: ${fmt(ivaVentas)}  |  IVA Compras: ${fmt(ivaCompras)}  |  IVA Neto a pagar: ${fmt(neto)}  |  Presente SAT-2237 antes del vencimiento.  |  contapro.totalappgt.online`;
 }
 
 function currentPeriod(): string {
@@ -74,7 +74,7 @@ export async function processAlertas() {
       const { ivaVentas, ivaCompras } = await getTenantIVA(t.id);
 
       const mensaje = buildAlertMessage(t.nombre, currentPeriod(), ivaVentas, ivaCompras);
-      const result = await enviarPlantillaAlerta(t.telefono, '\u{1F44B}', mensaje);
+      const result = await enviarPlantillaAlerta(t.telefono, 'ContaPro', mensaje);
 
       if (result.ok) {
         await pool.query('UPDATE tenants SET ultima_alerta = $1 WHERE id = $2', [hoy, t.id]);

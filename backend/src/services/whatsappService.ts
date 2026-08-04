@@ -1,9 +1,9 @@
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || '';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || '';
 
-// Plantilla aprobada en Meta — 2 parámetros: {{1}} = nombre del usuario, {{2}} = mensaje
-const TEMPLATE_NOMBRE = 'notificacion_sistema_ia';
-const TEMPLATE_LANG = 'es_MX';
+// Plantilla aprobada en Meta — 2 variables: {{sistema}} y {{mensaje}}
+const TEMPLATE_NOMBRE = 'totalappgt_aviso';
+const TEMPLATE_LANG = 'es';
 
 async function postWhatsApp(payload: any): Promise<{ ok: boolean; error?: string; raw?: any }> {
   if (!WHATSAPP_PHONE_ID || !WHATSAPP_TOKEN) {
@@ -49,9 +49,9 @@ function truncarMultilinea(texto: string, max: number = 1024): string {
   return t.slice(0, max - 3) + '...';
 }
 
-// Envía la plantilla aprobada con 2 parámetros: nombre del usuario + mensaje personalizado
+// Envía la plantilla totalappgt_aviso con 2 variables: {{sistema}} y {{mensaje}}
 // Funciona sin que el destinatario haya escrito primero (plantilla aprobada en producción)
-export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: string, mensaje: string): Promise<{ ok: boolean; error?: string }> {
+export async function enviarPlantillaAlerta(telefono: string, sistema: string, mensaje: string): Promise<{ ok: boolean; error?: string }> {
   return postWhatsApp({
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -63,7 +63,7 @@ export async function enviarPlantillaAlerta(telefono: string, nombreUsuario: str
       components: [{
         type: 'body',
         parameters: [
-          { type: 'text', text: (nombreUsuario || ' ').slice(0, 80) },
+          { type: 'text', text: truncar(sistema || 'ContaPro', 60) },
           { type: 'text', text: truncar(mensaje || '', 1024) },
         ],
       }],
@@ -98,11 +98,11 @@ export async function enviarWhatsAppDocumento(telefono: string, linkPdf: string,
 }
 
 export async function enviarAlertaIVA(telefono: string, nombreUsuario: string, periodo: string, monto: number): Promise<{ ok: boolean; error?: string }> {
-  return enviarPlantillaAlerta(telefono, nombreUsuario,
-    `ContaPro: su IVA de ${periodo} (Q${monto.toFixed(2)}) vence pronto. Presente SAT-2237. contapro.totalappgt.online`);
+  return enviarPlantillaAlerta(telefono, 'ContaPro',
+    `Hola ${nombreUsuario}, su IVA de ${periodo} (Q${monto.toFixed(2)}) vence pronto. Presente SAT-2237.`);
 }
 
 export async function enviarAlertaVencimiento(telefono: string, nombreUsuario: string, plan: string, dias: number): Promise<{ ok: boolean; error?: string }> {
-  return enviarPlantillaAlerta(telefono, nombreUsuario,
-    `ContaPro: su plan ${plan} vence en ${dias} dias. Renueve en su panel: contapro.totalappgt.online`);
+  return enviarPlantillaAlerta(telefono, 'ContaPro',
+    `Hola ${nombreUsuario}, su plan ${plan} vence en ${dias} dias. Renueve en su panel: contapro.totalappgt.online`);
 }
