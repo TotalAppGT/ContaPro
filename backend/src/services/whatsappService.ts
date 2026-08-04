@@ -63,8 +63,8 @@ export async function enviarPlantillaAlerta(telefono: string, sistema: string, m
       components: [{
         type: 'body',
         parameters: [
-          { type: 'text', text: truncar(sistema || 'ContaPro', 60) },
-          { type: 'text', text: truncar(mensaje || '', 1024) },
+          { type: 'text', parameter_name: 'sistema', text: truncar(sistema || 'ContaPro', 60) },
+          { type: 'text', parameter_name: 'mensaje', text: truncar(mensaje || '', 1024) },
         ],
       }],
     },
