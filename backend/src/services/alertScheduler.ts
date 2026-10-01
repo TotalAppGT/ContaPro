@@ -91,6 +91,12 @@ export async function processAlertas() {
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
 export function startAlertScheduler() {
+  // Interruptor de migracion: evita duplicar alertas al correr en paralelo.
+  if (process.env.DISABLE_CRON === 'true') {
+    console.log('[ALERTAS] Programador desactivado (DISABLE_CRON=true)');
+    return;
+  }
+
   console.log('[ALERTAS] Programador iniciado — revisa cada 5 minutos');
   processAlertas(); // Primera ejecución inmediata
   intervalId = setInterval(processAlertas, 5 * 60 * 1000);
