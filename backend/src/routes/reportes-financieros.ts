@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
+import { permitePlan } from './auditoria';
 
 const router = Router();
 router.use(authMiddleware);
@@ -245,6 +246,7 @@ const noCero = (n: number) => Math.abs(n) > 0.005;
 
 router.get('/antiguedad', async (req: Request, res: Response) => {
   try {
+    if (!(await permitePlan(req, 2))) { res.status(403).json({ error: 'La antiguedad de saldos requiere plan Profesional o superior' }); return; }
     const tipo = String(req.query.tipo || 'cxc').toLowerCase();
     const data = await calcularAntiguedad(req.user!.tenantId, tipo);
     const empresa = await nombreEmpresa(req.user!.tenantId);
@@ -255,6 +257,7 @@ router.get('/antiguedad', async (req: Request, res: Response) => {
 router.get('/antiguedad/xlsx', async (req: Request, res: Response) => {
   try {
     const ExcelJS = (await import('exceljs')).default;
+    if (!(await permitePlan(req, 2))) { res.status(403).json({ error: 'La antiguedad de saldos requiere plan Profesional o superior' }); return; }
     const tipo = String(req.query.tipo || 'cxc').toLowerCase();
     const data = await calcularAntiguedad(req.user!.tenantId, tipo);
     const empresa = await nombreEmpresa(req.user!.tenantId);
@@ -284,6 +287,7 @@ router.get('/antiguedad/xlsx', async (req: Request, res: Response) => {
 router.get('/antiguedad/pdf', async (req: Request, res: Response) => {
   try {
     const PDFDocument = (await import('pdfkit')).default;
+    if (!(await permitePlan(req, 2))) { res.status(403).json({ error: 'La antiguedad de saldos requiere plan Profesional o superior' }); return; }
     const tipo = String(req.query.tipo || 'cxc').toLowerCase();
     const data = await calcularAntiguedad(req.user!.tenantId, tipo);
     const empresa = await nombreEmpresa(req.user!.tenantId);

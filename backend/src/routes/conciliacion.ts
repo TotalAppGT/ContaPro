@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
+import { permitePlan } from './auditoria';
 
 const router = Router();
 router.use(authMiddleware);
@@ -276,6 +277,108 @@ router.get('/cuadre', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error calculando cuadre:', error.message);
     res.status(500).json({ error: 'Error al calcular la conciliación bancaria' });
+  }
+});
+
+// Punto 3: Importar estado de cuenta bancario (CSV / OFX) + auto-match contra asientos
+router.post('/importar', async (req: Request, res: Response) => {
+  const client = await pool.connect();
+  try {
+    if (!(await permitePlan(req, 2))) { res.status(403).json({ error: 'El import bancario requiere plan Profesional o superior' }); return; }
+    const tenantId = req.user!.tenantId;
+    const { numero_cuenta, client_nit, contenido } = req.body;
+    if (!numero_cuenta || !contenido) { res.status(400).json({ error: 'Cuenta bancaria y contenido del archivo son requeridos' }); return; }
+
+    const texto = String(contenido);
+    const movimientos: { fecha: string; no_documento?: string; concepto?: string; credito: number; debito: number }[] = [];
+
+    if (/<STMTTRN|<OFX/i.test(texto)) {
+      const trns = texto.match(/<STMTTRN>[\s\S]*?<\/STMTTRN>/gi) || [];
+      for (const t of trns) {
+        const monto = Number(((t.match(/<TRNAMT>([-\d.,]+)/i) || [])[1] || '0').replace(',', '.')) || 0;
+        const dt = (t.match(/<DTPOSTED>(\d{8})/i) || [])[1] || '';
+        const fecha = dt ? `${dt.slice(0, 4)}-${dt.slice(4, 6)}-${dt.slice(6, 8)}` : new Date().toISOString().slice(0, 10);
+        const memo = ((t.match(/<MEMO>([^<\r\n]+)/i) || [])[1] || '').trim();
+        const fitid = ((t.match(/<FITID>([^<\r\n]+)/i) || [])[1] || '').trim();
+        movimientos.push({ fecha, no_documento: fitid, concepto: memo, credito: monto > 0 ? monto : 0, debito: monto < 0 ? -monto : 0 });
+      }
+    } else {
+      const lines = texto.split(/\r?\n/).filter((l) => l.trim());
+      let idx: Record<string, number> = { fecha: 0, no_documento: 1, concepto: 2, debito: 3, credito: 4 };
+      let start = 0;
+      const header = lines[0] ? lines[0].toLowerCase() : '';
+      if (header.includes('fecha')) {
+        const cols = lines[0].split(/[;,\t]/).map((c) => c.trim().replace(/^"|"$/g, '').toLowerCase());
+        const find = (k: string) => cols.findIndex((c) => c.includes(k));
+        idx = { fecha: find('fecha'), no_documento: find('doc'), concepto: find('concept'), debito: find('debito') >= 0 ? find('debito') : find('débito') >= 0 ? find('débito') : find('cargo'), credito: find('credito') >= 0 ? find('credito') : find('crédito') >= 0 ? find('crédito') : find('abono') };
+        start = 1;
+      }
+      for (let i = start; i < lines.length; i++) {
+        const c = lines[i].split(/[;,\t]/).map((x) => x.trim().replace(/^"|"$/g, ''));
+        if (c.length < 3) continue;
+        const num = (v?: string) => Number(String(v || '0').replace(/[^\d.-]/g, '')) || 0;
+        const f = (idx.fecha >= 0 ? c[idx.fecha] : '') || new Date().toISOString().slice(0, 10);
+        movimientos.push({
+          fecha: f.includes('/') ? f.split('/').reverse().join('-') : f,
+          no_documento: idx.no_documento >= 0 ? c[idx.no_documento] : undefined,
+          concepto: idx.concepto >= 0 ? c[idx.concepto] : undefined,
+          debito: num(idx.debito >= 0 ? c[idx.debito] : undefined),
+          credito: num(idx.credito >= 0 ? c[idx.credito] : undefined),
+        });
+      }
+    }
+
+    if (movimientos.length === 0) { res.status(400).json({ error: 'No se detectaron movimientos en el archivo' }); return; }
+
+    await client.query('BEGIN');
+    const lastTx = await client.query(
+      `SELECT saldo FROM bank_transactions WHERE numero_cuenta = $1 AND tenant_id = $2 ORDER BY fecha DESC, created_at DESC LIMIT 1`,
+      [numero_cuenta, tenantId]
+    );
+    let saldo = lastTx.rows.length ? Number(lastTx.rows[0].saldo) : 0;
+    if (!lastTx.rows.length) {
+      const acc = await client.query('SELECT saldo_inicial FROM bank_accounts WHERE numero_cuenta = $1 AND tenant_id = $2', [numero_cuenta, tenantId]);
+      if (acc.rows.length) saldo = Number(acc.rows[0].saldo_inicial);
+    }
+
+    let insertados = 0;
+    const ids: string[] = [];
+    for (const m of movimientos) {
+      saldo = saldo + m.credito - m.debito;
+      const r = await client.query(
+        `INSERT INTO bank_transactions (tenant_id, client_nit, numero_cuenta, fecha, no_documento, tipo, concepto, credito, debito, saldo, conciliado)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,false) RETURNING id`,
+        [tenantId, client_nit || null, numero_cuenta, m.fecha, m.no_documento || null, m.debito > 0 ? 'DEBITO' : 'CREDITO', m.concepto || null, m.credito, m.debito, saldo]
+      );
+      ids.push(r.rows[0].id);
+      insertados++;
+    }
+    await client.query('COMMIT');
+
+    // Auto-match: buscar asientos por monto (±0.01)
+    const montos = movimientos.map((m) => m.credito || m.debito).filter((n) => n > 0);
+    let conciliados = 0;
+    if (montos.length) {
+      const asientos = await client.query(
+        `SELECT je.id, COALESCE(SUM(jel.debe),0) AS debe, COALESCE(SUM(jel.haber),0) AS haber
+         FROM journal_entries je JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id
+         WHERE je.tenant_id = $1
+         GROUP BY je.id`,
+        [tenantId]
+      );
+      for (const a of asientos.rows) {
+        const d = Number(a.debe), h = Number(a.haber);
+        if (montos.some((m) => Math.abs(m - d) < 0.01 || Math.abs(m - h) < 0.01)) conciliados++;
+      }
+    }
+
+    res.json({ ok: true, insertados, asientos_con_monto_coincidente: conciliados });
+  } catch (error: any) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Error importando estado de cuenta:', error.message);
+    res.status(500).json({ error: 'Error al importar el estado de cuenta' });
+  } finally {
+    client.release();
   }
 });
 
