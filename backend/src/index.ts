@@ -17,6 +17,7 @@ import comprasRoutes from './routes/compras';
 import clientesRoutes from './routes/clientes';
 import usersRoutes from './routes/users';
 import notificacionesRoutes from './routes/notificaciones';
+import reportesFinancierosRoutes from './routes/reportes-financieros';
 import whatsappRoutes from './routes/whatsapp';
 import { seedMasterTenant } from './services/seedMaster';
 import { startAlertScheduler } from './services/alertScheduler';
@@ -56,6 +57,7 @@ app.use('/api', (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantsRoutes);
 app.use('/api/contabilidad', contabilidadRoutes);
+app.use('/api/reportes-financieros', reportesFinancierosRoutes);
 app.use('/api/conciliacion', conciliacionRoutes);
 app.use('/api/sat', satRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
