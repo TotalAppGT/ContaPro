@@ -53,10 +53,10 @@ router.post('/estado-cuenta', async (req: Request, res: Response) => {
 Devuelve SOLO JSON: {"movimientos":[{"fecha":"YYYY-MM-DD","no_documento":"","concepto":"","debito":0,"credito":0}]}
 Debito = salidas/cargos; credito = entradas/abonos.`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
     const r = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
       body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: base64 } }, { text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: 'application/json' } }),
     });
     const j: any = await r.json();
