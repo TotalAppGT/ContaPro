@@ -106,7 +106,11 @@ async function startup() {
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_dia VARCHAR(2) DEFAULT '1'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS nombre_whatsapp VARCHAR(100)");
-    await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ultima_alerta DATE");
+      await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ultima_alerta DATE");
+      await pool.query("ALTER TABLE sales_book ADD COLUMN IF NOT EXISTS fecha_vencimiento DATE");
+      await pool.query("ALTER TABLE sales_book ADD COLUMN IF NOT EXISTS monto_pagado NUMERIC DEFAULT 0");
+      await pool.query("ALTER TABLE purchases_book ADD COLUMN IF NOT EXISTS fecha_vencimiento DATE");
+      await pool.query("ALTER TABLE purchases_book ADD COLUMN IF NOT EXISTS monto_pagado NUMERIC DEFAULT 0");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS whatsapp_messages (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

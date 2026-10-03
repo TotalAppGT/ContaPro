@@ -201,4 +201,118 @@ router.get('/estados/pdf', async (req: Request, res: Response) => {
   }
 });
 
+// ===================== Antiguedad de saldos CxC / CxP =====================
+function bucketDe(dias: number) {
+  if (dias <= 0) return 'corriente';
+  if (dias <= 30) return 'd1_30';
+  if (dias <= 60) return 'd31_60';
+  if (dias <= 90) return 'd61_90';
+  return 'd90_plus';
+}
+
+async function calcularAntiguedad(tenantId: string, tipo: string) {
+  const esCxc = tipo !== 'cxp';
+  const tabla = esCxc ? 'sales_book' : 'purchases_book';
+  const nitCol = esCxc ? 'nit_cliente' : 'nit_proveedor';
+  const nomCol = esCxc ? 'nombre_cliente' : 'nombre_proveedor';
+  const rows = (await pool.query(
+    `SELECT ${nitCol} AS nit, ${nomCol} AS nombre, total, COALESCE(monto_pagado,0) AS pagado, fecha, fecha_vencimiento
+     FROM ${tabla} WHERE tenant_id = $1`,
+    [tenantId]
+  )).rows;
+
+  const hoy = new Date();
+  const porCliente: Record<string, any> = {};
+  const totales = { corriente: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90_plus: 0, total: 0 };
+
+  for (const r of rows) {
+    const saldo = Number(r.total || 0) - Number(r.pagado || 0);
+    if (saldo <= 0.005) continue;
+    const venc = r.fecha_vencimiento ? new Date(r.fecha_vencimiento) : null;
+    const dias = venc ? Math.floor((hoy.getTime() - venc.getTime()) / 86400000) : 0;
+    const b = bucketDe(dias);
+    const key = r.nit || r.nombre || '—';
+    if (!porCliente[key]) porCliente[key] = { nit: r.nit, nombre: r.nombre, corriente: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90_plus: 0, total: 0 };
+    porCliente[key][b] += saldo;
+    porCliente[key].total += saldo;
+    totales[b] += saldo;
+    totales.total += saldo;
+  }
+  return { clientes: Object.values(porCliente).sort((a: any, b: any) => b.total - a.total), totales };
+}
+
+const noCero = (n: number) => Math.abs(n) > 0.005;
+
+router.get('/antiguedad', async (req: Request, res: Response) => {
+  try {
+    const tipo = String(req.query.tipo || 'cxc').toLowerCase();
+    const data = await calcularAntiguedad(req.user!.tenantId, tipo);
+    const empresa = await nombreEmpresa(req.user!.tenantId);
+    res.json({ empresa, tipo: tipo === 'cxp' ? 'CxP' : 'CxC', ...data });
+  } catch (e: any) { console.error('antiguedad:', e.message); res.status(500).json({ error: 'Error.' }); }
+});
+
+router.get('/antiguedad/xlsx', async (req: Request, res: Response) => {
+  try {
+    const ExcelJS = (await import('exceljs')).default;
+    const tipo = String(req.query.tipo || 'cxc').toLowerCase();
+    const data = await calcularAntiguedad(req.user!.tenantId, tipo);
+    const empresa = await nombreEmpresa(req.user!.tenantId);
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(tipo === 'cxp' ? 'CxP' : 'CxC');
+    ws.mergeCells('A1:G1');
+    ws.getCell('A1').value = `${empresa.nombre} — Antigüedad de saldos ${tipo === 'cxp' ? '(CxP)' : '(CxC)'}`;
+    ws.getCell('A1').font = { bold: true, size: 13 };
+    ws.columns = [{ width: 16 }, { width: 34 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }];
+    ws.getRow(3).values = ['NIT', 'Nombre', 'Corriente', '1-30', '31-60', '61-90', '+90', 'Total'];
+    ws.getRow(3).font = { bold: true };
+    let r = 4;
+    for (const c of data.clientes as any[]) {
+      ws.getRow(r).values = [c.nit || '', c.nombre || '', c.corriente, c.d1_30, c.d31_60, c.d61_90, c.d90_plus, c.total];
+      for (let col = 3; col <= 8; col++) ws.getCell(r, col).numFmt = '#,##0.00';
+      r++;
+    }
+    ws.getRow(r).values = ['', 'TOTAL', data.totales.corriente, data.totales.d1_30, data.totales.d31_60, data.totales.d61_90, data.totales.d90_plus, data.totales.total];
+    ws.getRow(r).font = { bold: true };
+    const buf = await wb.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="antiguedad-${tipo}.xlsx"`);
+    res.send(Buffer.from(buf));
+  } catch (e: any) { console.error('antiguedad xlsx:', e.message); res.status(500).json({ error: 'Error.' }); }
+});
+
+router.get('/antiguedad/pdf', async (req: Request, res: Response) => {
+  try {
+    const PDFDocument = (await import('pdfkit')).default;
+    const tipo = String(req.query.tipo || 'cxc').toLowerCase();
+    const data = await calcularAntiguedad(req.user!.tenantId, tipo);
+    const empresa = await nombreEmpresa(req.user!.tenantId);
+    const doc = new PDFDocument({ size: 'LETTER', margin: 40, layout: 'landscape' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="antiguedad-${tipo}.pdf"`);
+    doc.pipe(res);
+    const teal = '#0f766e';
+    doc.font('Helvetica-Bold').fontSize(14).fillColor(teal).text(`${empresa.nombre} — Antigüedad de saldos ${tipo === 'cxp' ? '(CxP)' : '(CxC)'}`, { align: 'center' });
+    doc.moveDown(0.8);
+    const cols = [30, 250, 320, 390, 460, 530, 600, 670];
+    const head = ['NIT', 'Nombre', 'Corriente', '1-30', '31-60', '61-90', '+90', 'Total'];
+    const rowAt = (vals: string[], y: number, bold = false) => {
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(8).fillColor('#111');
+      vals.forEach((v, i) => doc.text(v, cols[i], y, { width: i === 1 ? 230 : 68, align: i >= 2 ? 'right' : 'left' }));
+    };
+    rowAt(head, doc.y, true);
+    doc.moveDown(0.4);
+    for (const c of data.clientes as any[]) {
+      const y = doc.y;
+      rowAt([c.nit || '', c.nombre || '', money(c.corriente), money(c.d1_30), money(c.d31_60), money(c.d61_90), money(c.d90_plus), money(c.total)], y);
+      doc.moveDown(0.35);
+    }
+    doc.moveDown(0.3);
+    rowAt(['', 'TOTAL', money(data.totales.corriente), money(data.totales.d1_30), money(data.totales.d31_60), money(data.totales.d61_90), money(data.totales.d90_plus), money(data.totales.total)], doc.y, true);
+    doc.moveDown(1);
+    doc.font('Helvetica').fontSize(7).fillColor('#888').text(`Generado por ContaPro · ${new Date().toLocaleString('es-GT')}`, 40, doc.y, { width: doc.page.width - 80, align: 'center' });
+    doc.end();
+  } catch (e: any) { console.error('antiguedad pdf:', e.message); res.status(500).json({ error: 'Error.' }); }
+});
+
 export default router;
