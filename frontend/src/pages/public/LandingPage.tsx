@@ -454,7 +454,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2.5">
                   <span className="text-gray-500">Email:</span>
-                  <a href="mailto:info@totalappgt.online" className="hover:text-white transition-colors">info@totalappgt.online</a>
+                  <a href="mailto:info@totalappgt.com" className="hover:text-white transition-colors">info@totalappgt.com</a>
                 </li>
                 <li className="text-gray-500">Guatemala, C.A.</li>
               </ul>

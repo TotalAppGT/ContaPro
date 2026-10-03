@@ -1,5 +1,5 @@
 const RESEND_KEY = process.env.RESEND_API_KEY || '';
-const RESEND_FROM = process.env.RESEND_FROM || 'ContaPro <no-reply@totalappgt.online>';
+const RESEND_FROM = process.env.RESEND_FROM || 'ContaPro <no-reply@totalappgt.com>';
 
 export async function enviarEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (!RESEND_KEY) {
@@ -41,10 +41,10 @@ export function emailBienvenida(nombre: string, email: string, password: string,
         <div style="background:#f8fafc;padding:16px;border-radius:8px;margin:16px 0">
           <p style="margin:4px 0"><strong>Email:</strong> ${email}</p>
           <p style="margin:4px 0"><strong>Contraseña:</strong> ${password}</p>
-          <p style="margin:4px 0"><strong>Acceso:</strong> https://${subdomain}.totalappgt.online</p>
+          <p style="margin:4px 0"><strong>Acceso:</strong> https://${subdomain}.totalappgt.com</p>
         </div>
         <p style="color:#888;font-size:13px">Por seguridad, cambia tu contraseña al iniciar sesión.</p>
-        <a href="https://${subdomain}.totalappgt.online/login" style="display:inline-block;background:#0A2472;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:12px">Ingresar a ContaPro</a>
+        <a href="https://${subdomain}.totalappgt.com/login" style="display:inline-block;background:#0A2472;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:12px">Ingresar a ContaPro</a>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
         <p style="color:#aaa;font-size:12px;text-align:center">ContaPro © ${new Date().getFullYear()} — Guatemala, C.A.</p>
       </div>
@@ -64,7 +64,7 @@ export function emailInvitacion(nombre: string, email: string, password: string,
           <p style="margin:4px 0"><strong>Email:</strong> ${email}</p>
           <p style="margin:4px 0"><strong>Contraseña:</strong> ${password}</p>
         </div>
-        <a href="https://${subdomain}.totalappgt.online/login" style="display:inline-block;background:#0A2472;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:12px">Ingresar a ContaPro</a>
+        <a href="https://${subdomain}.totalappgt.com/login" style="display:inline-block;background:#0A2472;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;margin-top:12px">Ingresar a ContaPro</a>
       </div>
     </div>`;
 }

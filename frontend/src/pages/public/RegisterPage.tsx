@@ -112,10 +112,10 @@ export default function RegisterPage() {
               <Input label="Correo electronico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" required />
               <Input label="Contrasena" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimo 8 caracteres" required />
               {plan !== 'personal' && (
-                <Input label="Subdominio" value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="midespacho" hint={"Sera su direccion: midespacho.totalappgt.online"} required />
+                <Input label="Subdominio" value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="midespacho" hint={"Sera su direccion: midespacho.totalappgt.com"} required />
               )}
               {plan === 'personal' && (
-                <p className="text-sm text-gray-500 bg-blue-50 border border-blue-100 rounded-lg p-3">Plan Personal: accedera desde <strong>app.totalappgt.online</strong> con su correo y contrasena.</p>
+                <p className="text-sm text-gray-500 bg-blue-50 border border-blue-100 rounded-lg p-3">Plan Personal: accedera desde <strong>app.totalappgt.com</strong> con su correo y contrasena.</p>
               )}
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atras</Button>
@@ -133,7 +133,7 @@ export default function RegisterPage() {
                   <p><span className="text-gray-500">Nombre:</span> <strong>{name}</strong></p>
                   <p><span className="text-gray-500">NIT:</span> <strong>{nit}</strong></p>
                   <p><span className="text-gray-500">Email:</span> <strong>{email}</strong></p>
-                  <p><span className="text-gray-500">Acceso:</span> <strong>{plan === 'personal' ? 'app.totalappgt.online' : `${subdomain || '--'}.totalappgt.online`}</strong></p>
+                  <p><span className="text-gray-500">Acceso:</span> <strong>{plan === 'personal' ? 'app.totalappgt.com' : `${subdomain || '--'}.totalappgt.com`}</strong></p>
                 </div>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800">

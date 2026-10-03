@@ -65,13 +65,13 @@ function textoAlerta(tipo: string, nombre: string, datos: Record<string, any> = 
     case 'vinculacion':
       return `Hola ${nombre}, su numero de WhatsApp fue vinculado exitosamente. Recibira alertas fiscales, vencimientos y recordatorios. Para desvincular, use la opcion en su panel.`;
     case 'iva':
-      return `Hola ${nombre}, alerta fiscal. Periodo: ${datos.periodo || 'pendiente'}  |  Impuesto: IVA  |  Monto a declarar: ${fmtQ(datos.monto)}  |  Formulario: SAT-2237  |  Presente antes del vencimiento para evitar multas.  |  contapro.totalappgt.online`;
+      return `Hola ${nombre}, alerta fiscal. Periodo: ${datos.periodo || 'pendiente'}  |  Impuesto: IVA  |  Monto a declarar: ${fmtQ(datos.monto)}  |  Formulario: SAT-2237  |  Presente antes del vencimiento para evitar multas.  |  contapro.totalappgt.com`;
     case 'vencimiento':
-      return `Hola ${nombre}, su plan ${datos.plan || 'ContaPro'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos.  |  contapro.totalappgt.online`;
+      return `Hola ${nombre}, su plan ${datos.plan || 'ContaPro'} vence en ${datos.dias || 'pocos'} dias. Renueve para mantener acceso a todos los modulos.  |  contapro.totalappgt.com`;
     case 'sat':
-      return `Hola ${nombre}, tiene obligaciones SAT pendientes. Revise y presente sus impuestos desde el panel fiscal.  |  contapro.totalappgt.online`;
+      return `Hola ${nombre}, tiene obligaciones SAT pendientes. Revise y presente sus impuestos desde el panel fiscal.  |  contapro.totalappgt.com`;
     case 'bienvenida':
-      return `Hola ${nombre}, su cuenta contable esta activa. Modulos: Contabilidad, Ventas, Compras, SAT, Reportes. Acceda a contapro.totalappgt.online`;
+      return `Hola ${nombre}, su cuenta contable esta activa. Modulos: Contabilidad, Ventas, Compras, SAT, Reportes. Acceda a contapro.totalappgt.com`;
     default:
       return `Hola ${nombre}, tiene informacion pendiente en su panel contable. Acceda para revisar.`;
   }

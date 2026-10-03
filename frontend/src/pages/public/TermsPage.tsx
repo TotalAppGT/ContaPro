@@ -21,7 +21,7 @@ export default function TermsPage() {
         <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Aceptación de los Términos</h2>
-            <p>Al acceder y utilizar ContaPro (contapro.totalappgt.online), usted acepta estos términos y condiciones en su totalidad. Si no está de acuerdo, no utilice el servicio.</p>
+            <p>Al acceder y utilizar ContaPro (contapro.totalappgt.com), usted acepta estos términos y condiciones en su totalidad. Si no está de acuerdo, no utilice el servicio.</p>
             <p className="mt-2">ContaPro es un producto de <strong>TotalAppGT</strong>, con operaciones en Guatemala.</p>
           </section>
 
@@ -93,7 +93,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">10. Contacto</h2>
             <p>Para dudas sobre estos términos:</p>
             <ul className="list-disc pl-6 space-y-1 mt-2">
-              <li>Email: info@totalappgt.online</li>
+              <li>Email: info@totalappgt.com</li>
               <li>WhatsApp: <a href="https://wa.me/50258303182" target="_blank" rel="noopener noreferrer" className="text-primary-700 hover:underline">+502 5830-3182</a></li>
             </ul>
           </section>

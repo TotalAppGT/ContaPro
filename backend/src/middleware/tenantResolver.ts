@@ -7,7 +7,7 @@ export async function tenantResolver(req: Request, res: Response, next: NextFunc
   try {
     const host = req.headers.host || '';
     const parts = host.split('.');
-    const baseDomain = process.env.BASE_DOMAIN || 'totalappgt.online';
+    const baseDomain = process.env.BASE_DOMAIN || 'totalappgt.com';
 
     let subdomain: string | null = null;
 

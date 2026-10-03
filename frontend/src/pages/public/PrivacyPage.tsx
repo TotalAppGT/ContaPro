@@ -21,8 +21,8 @@ export default function PrivacyPage() {
         <div className="prose prose-gray max-w-none space-y-6 text-gray-700">
           <section>
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Responsable del Tratamiento</h2>
-            <p><strong>TotalAppGT</strong>, con domicilio en Guatemala, es el responsable del tratamiento de los datos personales recopilados a través de la plataforma ContaPro y el sitio web contapro.totalappgt.online.</p>
-            <p className="mt-2">Correo de contacto: info@totalappgt.online</p>
+            <p><strong>TotalAppGT</strong>, con domicilio en Guatemala, es el responsable del tratamiento de los datos personales recopilados a través de la plataforma ContaPro y el sitio web contapro.totalappgt.com.</p>
+            <p className="mt-2">Correo de contacto: info@totalappgt.com</p>
           </section>
 
           <section>
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
               <li>Oponerse al tratamiento</li>
               <li>Solicitar la portabilidad de sus datos</li>
             </ul>
-            <p className="mt-2">Para ejercer estos derechos, escriba a info@totalappgt.online.</p>
+            <p className="mt-2">Para ejercer estos derechos, escriba a info@totalappgt.com.</p>
           </section>
 
           <section>

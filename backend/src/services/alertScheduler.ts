@@ -5,7 +5,7 @@ import { enviarPlantillaAlerta } from './whatsappService';
 function buildAlertMessage(nombre: string, periodo: string, ivaVentas: number, ivaCompras: number): string {
   const fmt = (v: number) => `Q${v.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const neto = ivaVentas - ivaCompras;
-  return `Hola ${nombre}, alerta fiscal. Periodo: ${periodo}  |  IVA Ventas: ${fmt(ivaVentas)}  |  IVA Compras: ${fmt(ivaCompras)}  |  IVA Neto a pagar: ${fmt(neto)}  |  Presente SAT-2237 antes del vencimiento.  |  contapro.totalappgt.online`;
+  return `Hola ${nombre}, alerta fiscal. Periodo: ${periodo}  |  IVA Ventas: ${fmt(ivaVentas)}  |  IVA Compras: ${fmt(ivaCompras)}  |  IVA Neto a pagar: ${fmt(neto)}  |  Presente SAT-2237 antes del vencimiento.  |  contapro.totalappgt.com`;
 }
 
 function currentPeriod(): string {

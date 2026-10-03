@@ -104,5 +104,5 @@ export async function enviarAlertaIVA(telefono: string, nombreUsuario: string, p
 
 export async function enviarAlertaVencimiento(telefono: string, nombreUsuario: string, plan: string, dias: number): Promise<{ ok: boolean; error?: string }> {
   return enviarPlantillaAlerta(telefono, 'ContaPro',
-    `Hola ${nombreUsuario}, su plan ${plan} vence en ${dias} dias. Renueve en su panel: contapro.totalappgt.online`);
+    `Hola ${nombreUsuario}, su plan ${plan} vence en ${dias} dias. Renueve en su panel: contapro.totalappgt.com`);
 }
