@@ -348,7 +348,7 @@ router.post('/importar', async (req: Request, res: Response) => {
       const r = await client.query(
         `INSERT INTO bank_transactions (tenant_id, client_nit, numero_cuenta, fecha, no_documento, tipo, concepto, credito, debito, saldo, conciliado)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,false) RETURNING id`,
-        [tenantId, client_nit || null, numero_cuenta, m.fecha, m.no_documento || null, m.debito > 0 ? 'DEBITO' : 'CREDITO', m.concepto || null, m.credito, m.debito, saldo]
+        [tenantId, client_nit || '', numero_cuenta, m.fecha, m.no_documento || null, m.debito > 0 ? 'DEBITO' : 'CREDITO', m.concepto || null, m.credito, m.debito, saldo]
       );
       ids.push(r.rows[0].id);
       insertados++;
