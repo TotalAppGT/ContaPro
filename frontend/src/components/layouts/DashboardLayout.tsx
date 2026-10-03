@@ -24,6 +24,7 @@ const allNavItems: NavItem[] = [
   { to: '/app/conciliacion', icon: FileText, label: 'Conciliación', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/sat-masivo', icon: Upload, label: 'SAT Masivo', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/reportes', icon: FileBarChart2, label: 'Reportes', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/informes', icon: FileBarChart2, label: 'Informes Financieros' },
   { to: '/app/mi-oficina', icon: Building2, label: 'Mi Oficina', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/clientes', icon: Users, label: 'Clientes', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/usuarios', icon: Users, label: 'Usuarios', planRequired: ['profesional', 'empresarial'] },
