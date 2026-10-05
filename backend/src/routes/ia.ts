@@ -67,4 +67,38 @@ Debito = salidas/cargos; credito = entradas/abonos.`;
   } catch (e: any) { console.error('IA OCR:', e.message); res.status(500).json({ error: 'Error en la IA' }); }
 });
 
+// ---- 3) Proyector financiero + anomalias (DeepSeek) ----
+router.get('/proyeccion', async (req: Request, res: Response) => {
+  try {
+    if (!(await permitePlan(req, 2))) { res.status(403).json({ error: 'La IA requiere plan Profesional o superior' }); return; }
+    const tenantId = req.user!.tenantId;
+
+    const ventas = (await pool.query(
+      `SELECT to_char(fecha,'YYYY-MM') AS mes, COALESCE(SUM(total),0) AS total, COALESCE(SUM(iva),0) AS iva
+       FROM sales_book WHERE tenant_id=$1 GROUP BY 1 ORDER BY 1 DESC LIMIT 6`, [tenantId])).rows;
+    const compras = (await pool.query(
+      `SELECT to_char(fecha,'YYYY-MM') AS mes, COALESCE(SUM(total),0) AS total
+       FROM purchases_book WHERE tenant_id=$1 GROUP BY 1 ORDER BY 1 DESC LIMIT 6`, [tenantId])).rows;
+
+    const datos = `Ventas por mes (mas reciente primero): ${JSON.stringify(ventas)}
+Compras por mes (mas reciente primero): ${JSON.stringify(compras)}`;
+
+    const prompt = `Eres un analista financiero guatemalteco. Con estos datos historicos, proyecta el proximo mes y detecta riesgos.
+${datos}
+Responde SOLO con JSON valido:
+{"resumen":"<2 frases>","flujo_proyectado":{"entradas":<num>,"salidas":<num>,"neto":<num>},"alertas":["<alerta>",...],"recomendaciones":["<accion>",...]}`;
+
+    const r = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${DEEPSEEK_KEY}` },
+      body: JSON.stringify({ model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.3, response_format: { type: 'json_object' } }),
+    });
+    const j: any = await r.json();
+    const txt = j?.choices?.[0]?.message?.content || '{}';
+    let out: any = {};
+    try { out = JSON.parse(txt); } catch { out = { raw: txt }; }
+    res.json({ ok: true, historial: { ventas, compras }, proyeccion: out });
+  } catch (e: any) { console.error('IA proyeccion:', e.message); res.status(500).json({ error: 'Error en la IA' }); }
+});
+
 export default router;

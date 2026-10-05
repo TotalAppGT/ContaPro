@@ -319,4 +319,40 @@ router.get('/antiguedad/pdf', async (req: Request, res: Response) => {
   } catch (e: any) { console.error('antiguedad pdf:', e.message); res.status(500).json({ error: 'Error.' }); }
 });
 
+// ===================== Declaraguate IVA General =====================
+router.get('/iva', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const anio = Number(req.query.anio) || new Date().getFullYear();
+    const mes = Number(req.query.mes) || new Date().getMonth() + 1;
+
+    const v = (await pool.query(
+      `SELECT COALESCE(SUM(iva),0) AS iva, COALESCE(SUM(base_imponible),0) AS base, COALESCE(SUM(total),0) AS total, COUNT(*) AS n
+       FROM sales_book WHERE tenant_id=$1 AND EXTRACT(YEAR FROM fecha)=$2 AND EXTRACT(MONTH FROM fecha)=$3`,
+      [tenantId, anio, mes]
+    )).rows[0];
+    const c = (await pool.query(
+      `SELECT COALESCE(SUM(iva),0) AS iva, COALESCE(SUM(base_imponible),0) AS base, COALESCE(SUM(total),0) AS total, COUNT(*) AS n
+       FROM purchases_book WHERE tenant_id=$1 AND EXTRACT(YEAR FROM fecha)=$2 AND EXTRACT(MONTH FROM fecha)=$3`,
+      [tenantId, anio, mes]
+    )).rows[0];
+
+    const ivaVentas = Number(v.iva);
+    const ivaCompras = Number(c.iva);
+    const aPagar = ivaVentas - ivaCompras;
+    const empresa = await nombreEmpresa(tenantId);
+
+    res.json({
+      empresa,
+      periodo: { anio, mes },
+      ventas: { documentos: Number(v.n), base: Number(v.base), iva: ivaVentas, total: Number(v.total) },
+      compras: { documentos: Number(c.n), base: Number(c.base), iva: ivaCompras, total: Number(c.total) },
+      iva_ventas: ivaVentas,
+      iva_compras: ivaCompras,
+      credito_fiscal: ivaCompras,
+      a_pagar: aPagar,
+    });
+  } catch (e: any) { console.error('iva:', e.message); res.status(500).json({ error: 'Error al generar el declaraguate' }); }
+});
+
 export default router;
