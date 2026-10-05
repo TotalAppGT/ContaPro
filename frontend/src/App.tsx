@@ -19,6 +19,7 @@ const Conciliacion = lazy(() => import('@/pages/app/Conciliacion'));
 const EstadosFinancieros = lazy(() => import('@/pages/app/EstadosFinancieros'));
 const Auditoria = lazy(() => import('@/pages/app/Auditoria'));
 const ImportarBanco = lazy(() => import('@/pages/app/ImportarBanco'));
+const IAContable = lazy(() => import('@/pages/app/IAContable'));
 const SATMasivo = lazy(() => import('@/pages/app/SATMasivo'));
 const ReportesFiscales = lazy(() => import('@/pages/app/ReportesFiscales'));
 const MiOficina = lazy(() => import('@/pages/app/MiOficina'));
@@ -62,6 +63,7 @@ function AuthenticatedApp() {
           <Route path="informes" element={<EstadosFinancieros />} />
           <Route path="auditoria" element={<Auditoria />} />
           <Route path="importar-banco" element={<ImportarBanco />} />
+          <Route path="ia" element={<IAContable />} />
           <Route path="mi-oficina" element={<MiOficina />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="configuracion" element={<Configuracion />} />

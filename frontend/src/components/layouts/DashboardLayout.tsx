@@ -26,6 +26,7 @@ const allNavItems: NavItem[] = [
   { to: '/app/reportes', icon: FileBarChart2, label: 'Reportes', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/informes', icon: FileBarChart2, label: 'Informes Financieros' },
   { to: '/app/importar-banco', icon: Upload, label: 'Importar Banco', planRequired: ['profesional', 'empresarial'] },
+  { to: '/app/ia', icon: FileBarChart2, label: 'IA Contable', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/auditoria', icon: FileText, label: 'Auditoría', planRequired: ['empresarial', 'despacho'] },
   { to: '/app/mi-oficina', icon: Building2, label: 'Mi Oficina', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/clientes', icon: Users, label: 'Clientes', planRequired: ['profesional', 'empresarial'] },
