@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginAsTenant: (tenantId: string, email?: string, password?: string) => Promise<void>;
   loginWithGoogle: () => Promise<{ needsRegister: boolean; email: string; name: string; fbToken: string }>;
   register: (data: RegisterData) => Promise<void>;
   registerWithGoogle: (data: { name: string; nit: string; subdomain: string; plan: PlanType; email: string; fbToken: string }) => Promise<void>;
@@ -79,6 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginAsTenant = async (tenantId: string) => {
+    const data = await api.post<LoginResponse>(`/admin/tenants/${tenantId}/switch`, {});
+    saveSession(data.token, data.user, data.tenant);
+  };
+
   const loginWithGoogle = async () => {
     const fb = await firebaseGoogleLogin();
     try {
@@ -121,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, login, loginWithGoogle, register, registerWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, login, loginAsTenant, loginWithGoogle, register, registerWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

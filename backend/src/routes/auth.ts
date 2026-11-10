@@ -222,4 +222,99 @@ router.post('/change-password', authMiddleware, async (req: Request, res: Respon
   }
 });
 
+// ---- Firebase (Google / email) ----
+router.post('/firebase', async (req: Request, res: Response) => {
+  try {
+    const { firebaseToken, email } = req.body;
+    if (!firebaseToken && !email) {
+      res.status(400).json({ error: 'firebaseToken o email requerido' });
+      return;
+    }
+    const fb = firebaseToken ? await verifyFirebaseToken(firebaseToken) : null;
+    if (firebaseToken && !fb) {
+      res.status(401).json({ error: 'Token de Firebase inválido' });
+      return;
+    }
+    const correo = String(fb?.email || email || '').toLowerCase();
+    const userResult = await pool.query(
+      `SELECT u.id, u.tenant_id, u.email, u.nombre, u.rol, u.activo,
+              t.nombre as tenant_nombre, t.nit as tenant_nit, t.subdomain, t.plan, t.estado as tenant_estado
+       FROM users u JOIN tenants t ON u.tenant_id = t.id WHERE u.email = $1`,
+      [correo]
+    );
+    if (userResult.rows.length === 0) {
+      res.status(404).json({ error: 'No existe una cuenta con ese correo. Regístrate.' });
+      return;
+    }
+    const user = userResult.rows[0];
+    if (!user.activo) { res.status(403).json({ error: 'Usuario desactivado' }); return; }
+    if (user.tenant_estado !== 'activo' && user.tenant_estado !== 'trial') {
+      res.status(403).json({ error: 'La cuenta se encuentra suspendida o cancelada.' });
+      return;
+    }
+    const token = generateToken(user);
+    res.json({
+      token,
+      tenant: { id: user.tenant_id, nombre: user.tenant_nombre, nit: user.tenant_nit, subdomain: user.subdomain, plan: user.plan },
+      user: { id: user.id, email: user.email, nombre: user.nombre, rol: user.rol },
+    });
+  } catch (error: any) {
+    console.error('Error en firebase login:', error.message);
+    res.status(500).json({ error: 'Error al iniciar sesión' });
+  }
+});
+
+router.post('/firebase-register', async (req: Request, res: Response) => {
+  const client = await pool.connect();
+  try {
+    const { firebaseToken, email, name, nit, subdomain, plan } = req.body;
+    const fb = firebaseToken ? await verifyFirebaseToken(firebaseToken) : null;
+    const correo = String(fb?.email || email || '').toLowerCase();
+    if (!correo || !name || !nit || !subdomain) {
+      res.status(400).json({ error: 'Datos incompletos: nombre, nit, subdominio' });
+      return;
+    }
+    const existingUser = await client.query('SELECT id FROM users WHERE email = $1', [correo]);
+    if (existingUser.rows.length > 0) {
+      res.status(409).json({ error: 'Ese correo ya está registrado' });
+      return;
+    }
+    const dup = await client.query('SELECT id FROM tenants WHERE subdomain = $1 OR nit = $2', [subdomain, nit]);
+    if (dup.rows.length > 0) {
+      res.status(409).json({ error: 'Ya existe una cuenta con ese NIT o subdominio' });
+      return;
+    }
+    await client.query('BEGIN');
+    const planFinal = plan || 'personal';
+    const t = await client.query(
+      `INSERT INTO tenants (nombre, nit, email, subdomain, plan)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, nit, subdomain, plan`,
+      [name, nit, correo, subdomain, planFinal]
+    );
+    const tenant = t.rows[0];
+    const passwordHash = await bcrypt.hash('firebase-auth', 12);
+    const u = await client.query(
+      `INSERT INTO users (tenant_id, email, password_hash, nombre, rol)
+       VALUES ($1, $2, $3, $4, 'owner') RETURNING id, tenant_id, email, nombre, rol`,
+      [tenant.id, correo, passwordHash, name]
+    );
+    await client.query(
+      `INSERT INTO subscriptions (tenant_id, plan, estado, monto, periodo_inicio, periodo_fin)
+       VALUES ($1, $2, 'trialing', 0, NOW(), NOW() + INTERVAL '14 days')`,
+      [tenant.id, planFinal]
+    );
+    await client.query('COMMIT');
+    await seedChartOfAccounts(tenant.id);
+    const user = u.rows[0];
+    const token = generateToken(user);
+    res.status(201).json({ message: 'Cuenta creada exitosamente', token, tenant, user });
+  } catch (error: any) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Error en firebase register:', error.message);
+    res.status(500).json({ error: 'Error al registrar la cuenta' });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;

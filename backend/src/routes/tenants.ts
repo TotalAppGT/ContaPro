@@ -1,12 +1,54 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
+import multer from 'multer';
 import { authMiddleware } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024 } });
 
 router.use(authMiddleware);
-router.use(requireRole('owner'));
+router.use(requireRole('owner', 'admin'));
+
+// Actualizar la empresa/oficina del usuario actual (acepta nombres del frontend)
+router.patch('/', async (req: Request, res: Response) => {
+  try {
+    const tenantId = req.user!.tenantId;
+    const b = req.body || {};
+    const mapa: [string, string][] = [
+      ['office_name', 'nombre'], ['nombre', 'nombre'],
+      ['nit', 'nit'], ['email', 'email'],
+      ['address', 'direccion'], ['direccion', 'direccion'],
+      ['phone', 'telefono'], ['telefono', 'telefono'],
+      ['signature_name', 'firma_nombre'], ['firma_nombre', 'firma_nombre'],
+      ['colegiado_number', 'colegiado'], ['colegiado', 'colegiado'],
+      ['logo_base64', 'logo_base64'],
+    ];
+    const fields: string[] = [];
+    const values: any[] = [];
+    let n = 1;
+    for (const [src, col] of mapa) {
+      if (b[src] !== undefined && b[src] !== null) {
+        fields.push(`${col} = $${n++}`);
+        values.push(b[src]);
+      }
+    }
+    if (fields.length === 0) {
+      res.status(400).json({ error: 'No hay campos para actualizar' });
+      return;
+    }
+    fields.push('updated_at = NOW()');
+    values.push(tenantId);
+    const result = await pool.query(
+      `UPDATE tenants SET ${fields.join(', ')} WHERE id = $${n} RETURNING *`,
+      values
+    );
+    res.json({ tenant: result.rows[0], message: 'Oficina actualizada exitosamente' });
+  } catch (error: any) {
+    console.error('Error actualizando oficina:', error.message);
+    res.status(500).json({ error: 'Error al actualizar la oficina' });
+  }
+});
 
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -150,17 +192,19 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Subir logo (base64)
-router.post('/logo', async (req: Request, res: Response) => {
+// Subir logo (multipart o base64 JSON)
+router.post('/logo', upload.single('logo'), async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
-    const { logo } = req.body;
-
+    let logo = (req.body && req.body.logo) || '';
+    const file = (req as any).file as { mimetype: string; buffer: Buffer } | undefined;
+    if (file && file.buffer) {
+      logo = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    }
     if (!logo) {
-      res.status(400).json({ error: 'Se requiere el logo en base64' });
+      res.status(400).json({ error: 'Se requiere el logo (archivo o base64)' });
       return;
     }
-
     await pool.query('UPDATE tenants SET logo_base64 = $1, updated_at = NOW() WHERE id = $2', [logo, tenantId]);
     res.json({ message: 'Logo actualizado exitosamente' });
   } catch (error: any) {

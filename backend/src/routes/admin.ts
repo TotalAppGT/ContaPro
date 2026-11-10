@@ -8,7 +8,79 @@ const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
 
 router.use(authMiddleware);
-router.use(requireRole('owner'));
+router.use(requireRole('admin'));
+
+function mapEstado(estado: string, subEstado?: string): string {
+  if (estado === 'activo') return 'active';
+  if (estado === 'suspendido') return 'suspended';
+  if (estado === 'cancelado') return 'cancelled';
+  if (subEstado === 'trialing') return 'trial';
+  return 'active';
+}
+
+router.get('/tenants', async (req: Request, res: Response) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 500, 1), 500);
+    const result = await pool.query(
+      `SELECT t.id, t.nombre, t.nit, t.subdomain, t.email, t.telefono, t.direccion,
+              t.plan, t.estado, t.created_at, s.periodo_fin, s.estado AS sub_estado
+       FROM tenants t
+       LEFT JOIN subscriptions s ON s.tenant_id = t.id
+       ORDER BY t.created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    res.json(
+      result.rows.map((r: any) => ({
+        id: r.id,
+        nit: r.nit || '',
+        name: r.nombre,
+        legal_name: r.nombre,
+        subdomain: r.subdomain,
+        email: r.email || '',
+        phone: r.telefono || '',
+        address: r.direccion || '',
+        regime: 'general',
+        plan: r.plan,
+        status: mapEstado(r.estado, r.sub_estado),
+        created_at: r.created_at,
+        subscription_expires: r.periodo_fin,
+      }))
+    );
+  } catch (error: any) {
+    console.error('Error listando afiliados:', error.message);
+    res.status(500).json({ error: 'Error al listar afiliados' });
+  }
+});
+
+router.patch('/tenants/:id/status', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const mapa: Record<string, string> = {
+      active: 'activo', activo: 'activo',
+      suspended: 'suspendido', suspendido: 'suspendido',
+      cancelled: 'cancelado', canceled: 'cancelado', cancelado: 'cancelado',
+    };
+    const estado = mapa[String(status)];
+    if (!estado) {
+      res.status(400).json({ error: 'Estado invalido' });
+      return;
+    }
+    const result = await pool.query(
+      'UPDATE tenants SET estado = $1, updated_at = NOW() WHERE id = $2 RETURNING id, nombre, estado',
+      [estado, id]
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Afiliado no encontrado' });
+      return;
+    }
+    res.json({ tenant: result.rows[0], message: 'Estado actualizado' });
+  } catch (error: any) {
+    console.error('Error cambiando estado de afiliado:', error.message);
+    res.status(500).json({ error: 'Error al actualizar estado' });
+  }
+});
 
 router.get('/dashboard', async (req: Request, res: Response) => {
   try {

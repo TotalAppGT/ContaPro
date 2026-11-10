@@ -6,7 +6,11 @@ export async function seedMasterTenant(): Promise<void> {
   try {
     const existing = await client.query("SELECT id FROM tenants WHERE subdomain = 'admin'");
     if (existing.rows.length > 0) {
-      console.log('Master tenant ya existe, omitiendo seed.');
+      // Asegurar que el dueño de la plataforma tenga rol 'admin' (panel global)
+      await client.query(
+        "UPDATE users SET rol = 'admin', activo = true WHERE email = 'totalappgt@gmail.com'"
+      );
+      console.log('Master tenant ya existe; rol admin asegurado.');
       return;
     }
 
@@ -24,8 +28,8 @@ export async function seedMasterTenant(): Promise<void> {
 
     await client.query(
       `INSERT INTO users (tenant_id, email, password_hash, nombre, rol)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [tenantId, 'totalappgt@gmail.com', passwordHash, 'Administrador', 'owner']
+       VALUES ($1, $2, $3, $4, 'admin')`,
+      [tenantId, 'totalappgt@gmail.com', passwordHash, 'Administrador']
     );
 
     await client.query('SELECT copiar_catalogo_tenant($1)', [tenantId]);

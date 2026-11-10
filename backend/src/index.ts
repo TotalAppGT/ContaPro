@@ -79,11 +79,13 @@ const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
 app.use(express.static(frontendPath));
 
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api/')) {
-    const file = path.join(frontendPath, 'index.html');
-    if (fs.existsSync(file)) res.sendFile(file);
-    else res.status(200).send('ContaPro - Frontend no compilado. Ejecuta: cd frontend && npm run build');
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'Ruta no encontrada' });
+    return;
   }
+  const file = path.join(frontendPath, 'index.html');
+  if (fs.existsSync(file)) res.sendFile(file);
+  else res.status(200).send('ContaPro - Frontend no compilado. Ejecuta: cd frontend && npm run build');
 });
 
 // --- Error handler ---
