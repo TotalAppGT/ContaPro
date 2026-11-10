@@ -76,6 +76,10 @@ router.get('/confirmar', authMiddleware, async (req: Request, res: Response) => 
 
 router.get('/simulate-payment', async (req: Request, res: Response) => {
   try {
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({ error: 'Solo el administrador de la plataforma puede simular pagos' });
+      return;
+    }
     const { sub_id } = req.query;
     if (!sub_id) { res.status(400).json({ error: 'sub_id requerido' }); return; }
     const result = await pool.query("UPDATE subscriptions SET estado = 'activo', periodo_inicio = NOW(), periodo_fin = NOW() + INTERVAL '30 days' WHERE id = $1 RETURNING *", [sub_id]);
