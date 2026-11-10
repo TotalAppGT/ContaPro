@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
     saldo_actual      NUMERIC(14,2)  NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX idx_ba_cuenta ON bank_accounts (tenant_id, client_nit, numero_cuenta);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ba_cuenta ON bank_accounts (tenant_id, client_nit, numero_cuenta);
 
 -- ============================================================
 -- 10. BANK TRANSACTIONS (Transacciones Bancarias)
