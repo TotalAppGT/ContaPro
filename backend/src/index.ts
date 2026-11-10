@@ -113,6 +113,8 @@ async function startup() {
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS alerta_hora VARCHAR(5) DEFAULT '08:00'");
     await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS nombre_whatsapp VARCHAR(100)");
       await pool.query("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ultima_alerta DATE");
+      await pool.query("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_rol_check");
+      await pool.query("ALTER TABLE users ADD CONSTRAINT users_rol_check CHECK (rol IN ('owner','admin','contador','auxiliar','cliente_viewer'))");
       await pool.query("ALTER TABLE sales_book ADD COLUMN IF NOT EXISTS fecha_vencimiento DATE");
       await pool.query("ALTER TABLE sales_book ADD COLUMN IF NOT EXISTS monto_pagado NUMERIC DEFAULT 0");
       await pool.query("ALTER TABLE purchases_book ADD COLUMN IF NOT EXISTS fecha_vencimiento DATE");
