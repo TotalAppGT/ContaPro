@@ -1,20 +1,11 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
-import crypto from 'crypto';
+import { createRecurrenteCheckout, verifySvix } from '../services/recurrente';
 
 const router = Router();
 
-const RECURRENTE_SECRET = process.env.RECURRENTE_SIGNING_SECRET || '';
-
-function verifyWebhookSignature(body: string, signature: string): boolean {
-  if (!RECURRENTE_SECRET) return true;
-  try {
-    const hmac = crypto.createHmac('sha256', RECURRENTE_SECRET);
-    const digest = hmac.update(body).digest('hex');
-    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature || ''));
-  } catch { return false; }
-}
+const APP_URL = process.env.APP_URL || 'https://contapro.totalappgt.com';
 
 const PLANS = [
   { id: 'personal', nombre: 'Personal', precio: 79, precio_anual: 790, moneda: 'GTQ', recurrente_url: 'https://app.recurrente.com/s/total-app-gt/contapro-personal', features: ['1 empresa', 'Libros de IVA', 'Facturacion basica', 'Reportes SAT'], limits: { users: 1, clients: 1 } },
@@ -27,6 +18,7 @@ router.get('/plans', (req: Request, res: Response) => { res.json({ planes: PLANS
 router.post('/create-checkout', authMiddleware, async (req: Request, res: Response) => {
   try {
     const tenantId = req.user!.tenantId;
+    const email = req.user!.email;
     const { plan } = req.body;
     const planInfo = PLANS.find(p => p.id === plan);
     if (!planInfo) { res.status(400).json({ error: 'Plan no valido' }); return; }
@@ -36,31 +28,58 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
        VALUES ($1, $2, 'pendiente', $3, NOW(), NOW() + INTERVAL '30 days') RETURNING *`,
       [tenantId, plan, planInfo.precio]
     );
+    const subId = result.rows[0].id;
 
-    res.json({ message: 'Redirigiendo a Recurrente.', checkout_url: planInfo.recurrente_url, subscription_id: result.rows[0].id });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+    const checkout_url = await createRecurrenteCheckout({
+      tenant_id: tenantId,
+      subscription_id: subId,
+      plan_name: planInfo.nombre,
+      amount: planInfo.precio,
+      email,
+      success_url: `${APP_URL}/app?checkout=success`,
+      cancel_url: `${APP_URL}/app?checkout=canceled`,
+    });
+
+    res.json({ message: 'Redirigiendo a Recurrente.', checkout_url, subscription_id: subId });
+  } catch (e: any) { console.error('create-checkout:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
-    const signature = req.headers['recurrente-signature'] as string || '';
-    if (RECURRENTE_SECRET && !verifyWebhookSignature(JSON.stringify(req.body), signature)) {
+    const secret = process.env.RECURRENTE_SIGNING_SECRET || '';
+    const raw = (req as any).rawBody ? (req as any).rawBody.toString('utf8') : JSON.stringify(req.body);
+    if (secret && !verifySvix(raw, req.headers as Record<string, any>, secret)) {
       res.status(403).json({ error: 'Firma invalida' }); return;
     }
-    const { subscription_id, status, metadata } = req.body;
-    const subId = subscription_id || metadata?.subscription_id;
-    if (!subId) { res.status(400).json({ error: 'subscription_id requerido' }); return; }
 
-    if (status === 'completed' || status === 'paid' || status === 'active') {
-      const result = await pool.query("UPDATE subscriptions SET estado = 'activo', periodo_inicio = NOW(), periodo_fin = NOW() + INTERVAL '30 days' WHERE id = $1 RETURNING *", [subId]);
-      if (result.rows.length > 0) {
-        await pool.query("UPDATE tenants SET estado = 'activo', plan = $1, updated_at = NOW() WHERE id = $2", [result.rows[0].plan, result.rows[0].tenant_id]);
+    const event = (req.body || {}) as any;
+    const eventType = String(event.event_type || event.type || '');
+    const data = event.data || {};
+    const meta = data.metadata || data.checkout?.metadata || event.metadata || {};
+    const subId = meta.subscription_id || data.subscription_id || event.subscription_id;
+    const tenantId = meta.tenant_id;
+    const plan = meta.plan;
+    const estado = String(data.status || data.checkout?.status || '').toLowerCase();
+
+    const inactivo = /fail|cancel|refund|unpaid|past_due/.test(eventType.toLowerCase()) ||
+      ['failed', 'cancelled', 'canceled', 'unpaid', 'past_due'].includes(estado);
+    const activo = /succeed|complete|paid|active|created|updated|renew/i.test(eventType) ||
+      ['paid', 'succeeded', 'completed', 'active'].includes(estado);
+
+    if (activo && !inactivo) {
+      if (subId) {
+        await pool.query("UPDATE subscriptions SET estado='activo', periodo_inicio=NOW(), periodo_fin=NOW()+INTERVAL '30 days' WHERE id=$1", [subId]);
       }
-    } else if (status === 'failed' || status === 'cancelled') {
-      await pool.query("UPDATE subscriptions SET estado = 'cancelado' WHERE id = $1", [subId]);
+      if (tenantId) {
+        await pool.query("UPDATE tenants SET estado='activo', plan=COALESCE($1, plan), updated_at=NOW() WHERE id=$2", [plan || null, tenantId]);
+      }
+    } else if (inactivo) {
+      const cancelado = /cancel|refund/.test(eventType.toLowerCase());
+      if (subId) await pool.query("UPDATE subscriptions SET estado='cancelado' WHERE id=$1", [subId]);
+      if (tenantId) await pool.query("UPDATE tenants SET estado=$1, updated_at=NOW() WHERE id=$2", [cancelado ? 'cancelado' : 'suspendido', tenantId]);
     }
     res.json({ received: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) { console.error('webhook:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 router.get('/confirmar', authMiddleware, async (req: Request, res: Response) => {
@@ -74,7 +93,7 @@ router.get('/confirmar', authMiddleware, async (req: Request, res: Response) => 
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
-router.get('/simulate-payment', async (req: Request, res: Response) => {
+router.get('/simulate-payment', authMiddleware, async (req: Request, res: Response) => {
   try {
     if (!req.user || req.user.role !== 'admin') {
       res.status(403).json({ error: 'Solo el administrador de la plataforma puede simular pagos' });

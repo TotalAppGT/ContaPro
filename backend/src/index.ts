@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+﻿import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
@@ -31,11 +31,11 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb', verify: (req, _res, buf) => { (req as any).rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true }));
 app.use(tenantResolver);
 
-// --- Rutas públicas (sin auth) ---
+// --- Rutas pÃºblicas (sin auth) ---
 
 app.get('/api/health', (req, res) => {
   res.json({
@@ -73,7 +73,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/notificaciones', notificacionesRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 
-// --- Frontend estático (sin auth) ---
+// --- Frontend estÃ¡tico (sin auth) ---
 
 const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
 app.use(express.static(frontendPath));
@@ -149,3 +149,4 @@ async function startup() {
 startup();
 
 export default app;
+
