@@ -7,10 +7,14 @@ export interface CreateCheckoutParams {
   tenant_id: string;
   subscription_id: string;
   plan_name: string;
+  plan_id?: string;
   amount: number;
   email: string;
   success_url: string;
   cancel_url: string;
+  ciclo?: string;
+  cupon?: string | null;
+  descuento?: number;
 }
 
 export async function createRecurrenteCheckout(params: CreateCheckoutParams): Promise<string> {
@@ -34,7 +38,10 @@ export async function createRecurrenteCheckout(params: CreateCheckoutParams): Pr
       metadata: {
         tenant_id: params.tenant_id,
         subscription_id: params.subscription_id,
-        plan: params.plan_name,
+        plan: params.plan_id || params.plan_name,
+        ...(params.ciclo ? { ciclo: params.ciclo } : {}),
+        ...(params.cupon ? { cupon: params.cupon } : {}),
+        ...(params.descuento ? { descuento: String(params.descuento) } : {}),
       },
       success_url: params.success_url,
       cancel_url: params.cancel_url,

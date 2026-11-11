@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import pool from '../db/pool';
 import { authMiddleware } from '../middleware/auth';
 import { createRecurrenteCheckout, verifySvix } from '../services/recurrente';
+import { buscarCupon } from '../lib/cupones';
 
 const router = Router();
 
@@ -19,28 +20,63 @@ router.post('/create-checkout', authMiddleware, async (req: Request, res: Respon
   try {
     const tenantId = req.user!.tenantId;
     const email = req.user!.email;
-    const { plan } = req.body;
+    const { plan, ciclo: cicloRaw, cupon: cuponRaw } = req.body;
     const planInfo = PLANS.find(p => p.id === plan);
     if (!planInfo) { res.status(400).json({ error: 'Plan no valido' }); return; }
+
+    const ciclo = String(cicloRaw || 'mensual').toLowerCase() === 'anual' ? 'anual' : 'mensual';
+    const cupon = buscarCupon(cuponRaw);
+    if (cuponRaw && !cupon) { res.status(400).json({ error: 'Cupon invalido o expirado' }); return; }
+
+    if (cupon?.tipo === 'trial') {
+      const planTrial = cupon.planTrial && PLANS.some(p => p.id === cupon.planTrial) ? cupon.planTrial : plan;
+      const dias = cupon.dias || 30;
+      await pool.query(
+        `INSERT INTO subscriptions (tenant_id, plan, estado, monto, periodo_inicio, periodo_fin)
+         VALUES ($1, $2, 'activo', 0, NOW(), NOW() + ($3 || ' days')::interval)`,
+        [tenantId, planTrial, String(dias)]
+      );
+      await pool.query("UPDATE tenants SET estado='activo', plan=$1, updated_at=NOW() WHERE id=$2", [planTrial, tenantId]);
+      res.json({ trial_activado: true, plan: planTrial, dias, cupon: cupon.codigo });
+      return;
+    }
+
+    const precioBase = ciclo === 'anual' ? planInfo.precio_anual : planInfo.precio;
+    const descuento = cupon?.tipo === 'porcentaje' ? Math.round(precioBase * (cupon.valor / 100)) : 0;
+    const monto = Math.max(0, precioBase - descuento);
 
     const result = await pool.query(
       `INSERT INTO subscriptions (tenant_id, plan, estado, monto, periodo_inicio, periodo_fin)
        VALUES ($1, $2, 'pendiente', $3, NOW(), NOW() + INTERVAL '30 days') RETURNING *`,
-      [tenantId, plan, planInfo.precio]
+      [tenantId, plan, monto]
     );
     const subId = result.rows[0].id;
 
     const checkout_url = await createRecurrenteCheckout({
       tenant_id: tenantId,
       subscription_id: subId,
-      plan_name: planInfo.nombre,
-      amount: planInfo.precio,
+      plan_name: `${planInfo.nombre} (${ciclo})`,
+      plan_id: planInfo.id,
+      amount: monto,
       email,
       success_url: `${APP_URL}/app?checkout=success`,
       cancel_url: `${APP_URL}/app?checkout=canceled`,
+      ciclo,
+      cupon: cupon?.codigo || null,
+      descuento,
     });
 
-    res.json({ message: 'Redirigiendo a Recurrente.', checkout_url, subscription_id: subId });
+    res.json({
+      message: 'Redirigiendo a Recurrente.',
+      checkout_url,
+      subscription_id: subId,
+      plan,
+      ciclo,
+      precio_base: precioBase,
+      descuento,
+      monto,
+      cupon: cupon?.codigo || null,
+    });
   } catch (e: any) { console.error('create-checkout:', e.message); res.status(500).json({ error: e.message }); }
 });
 
@@ -67,8 +103,10 @@ router.post('/webhook', async (req: Request, res: Response) => {
       ['paid', 'succeeded', 'completed', 'active'].includes(estado);
 
     if (activo && !inactivo) {
+      const ciclo = String(meta.ciclo || 'mensual').toLowerCase() === 'anual' ? 'anual' : 'mensual';
+      const dias = ciclo === 'anual' ? '365' : '30';
       if (subId) {
-        await pool.query("UPDATE subscriptions SET estado='activo', periodo_inicio=NOW(), periodo_fin=NOW()+INTERVAL '30 days' WHERE id=$1", [subId]);
+        await pool.query("UPDATE subscriptions SET estado='activo', periodo_inicio=NOW(), periodo_fin=NOW()+($2 || ' days')::interval WHERE id=$1", [subId, dias]);
       }
       if (tenantId) {
         await pool.query("UPDATE tenants SET estado='activo', plan=COALESCE($1, plan), updated_at=NOW() WHERE id=$2", [plan || null, tenantId]);
