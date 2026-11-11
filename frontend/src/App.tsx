@@ -26,6 +26,7 @@ const MiOficina = lazy(() => import('@/pages/app/MiOficina'));
 const Clientes = lazy(() => import('@/pages/app/Clientes'));
 const Configuracion = lazy(() => import('@/pages/app/Configuracion'));
 const Usuarios = lazy(() => import('@/pages/app/Usuarios'));
+const Suscripcion = lazy(() => import('@/pages/app/Suscripcion'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const AdminTenants = lazy(() => import('@/pages/admin/AdminTenants'));
 
@@ -68,6 +69,7 @@ function AuthenticatedApp() {
           <Route path="clientes" element={<Clientes />} />
           <Route path="configuracion" element={<Configuracion />} />
           <Route path="usuarios" element={<Usuarios />} />
+          <Route path="suscripcion" element={<Suscripcion />} />
         </Routes>
       </Suspense>
     </DashboardLayout>

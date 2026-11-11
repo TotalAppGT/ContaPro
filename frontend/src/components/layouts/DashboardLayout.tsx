@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, ShoppingCart, ArrowRightLeft, Upload, FileBarChart2,
   Building2, Users, Settings, LogOut, Menu, X, ChevronDown, ChevronLeft,
-  Calculator, Globe
+  Calculator, Globe, CreditCard
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,7 @@ const allNavItems: NavItem[] = [
   { to: '/app/clientes', icon: Users, label: 'Clientes', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/usuarios', icon: Users, label: 'Usuarios', planRequired: ['profesional', 'empresarial'] },
   { to: '/app/configuracion', icon: Settings, label: 'Configuración' },
+  { to: '/app/suscripcion', icon: CreditCard, label: 'Suscripción' },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
