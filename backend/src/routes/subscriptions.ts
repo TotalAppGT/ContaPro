@@ -106,7 +106,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const ciclo = String(meta.ciclo || 'mensual').toLowerCase() === 'anual' ? 'anual' : 'mensual';
       const dias = ciclo === 'anual' ? '365' : '30';
       if (subId) {
-        await pool.query("UPDATE subscriptions SET estado='activo', periodo_inicio=NOW(), periodo_fin=NOW()+($2 || ' days')::interval WHERE id=$1", [subId, dias]);
+        await pool.query("UPDATE subscriptions SET estado='activo', periodo_inicio=COALESCE(periodo_inicio, NOW()), periodo_fin=GREATEST(NOW(), COALESCE(periodo_fin, NOW())) + ($2 || ' days')::interval, aviso_vencimiento=NULL, aviso_vencido=NULL WHERE id=$1", [subId, dias]);
       }
       if (tenantId) {
         await pool.query("UPDATE tenants SET estado='activo', plan=COALESCE($1, plan), updated_at=NOW() WHERE id=$2", [plan || null, tenantId]);
